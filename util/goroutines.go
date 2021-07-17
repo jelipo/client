@@ -1,22 +1,22 @@
-package main
+package util
 
 import (
 	"sync"
 )
 
-type GoPackage struct {
+type ThreadGroup struct {
 	workGroup sync.WaitGroup
 	lock      bool
 }
 
-func NewGoPackage() GoPackage {
-	return GoPackage{
+func NewGoPackage() ThreadGroup {
+	return ThreadGroup{
 		workGroup: sync.WaitGroup{},
 		lock:      false,
 	}
 }
 
-func (pack *GoPackage) AddAndRun(a func()) {
+func (pack *ThreadGroup) AddAndRun(a func()) {
 	if pack.lock {
 		return
 	}
@@ -24,12 +24,12 @@ func (pack *GoPackage) AddAndRun(a func()) {
 	pack.workGroup.Add(1)
 }
 
-func (pack *GoPackage) WaitAllDone() {
+func (pack *ThreadGroup) WaitAllDone() {
 	pack.lock = true
 	pack.workGroup.Wait()
 }
 
-func (pack *GoPackage) run(a func()) {
+func (pack *ThreadGroup) run(a func()) {
 	a()
 	pack.workGroup.Done()
 }

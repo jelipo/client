@@ -1,0 +1,6 @@
+{
+  "server": {
+    "address": "http://localhost",
+    "token": "test-token"
+  }
+}

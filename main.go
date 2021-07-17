@@ -1,6 +1,7 @@
 package main
 
 import (
+	"client/util"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +9,15 @@ import (
 )
 
 func main() {
+
+	reader := newConfigReader("/home/cao/go/client/config.json")
+	config, readErr := reader.readNewConfig()
+	if readErr != nil {
+		fmt.Println(readErr)
+		return
+	}
+	fmt.Println(config)
+
 	cmd := exec.Command("/bin/bash", "tem.sh")
 	cmd.Dir = "/home/cao/go/client"
 	stdErrPipe, errErr := cmd.StderrPipe()
@@ -28,7 +38,7 @@ func main() {
 		return
 	}
 
-	goPackage := NewGoPackage()
+	goPackage := util.NewGoPackage()
 	goPackage.AddAndRun(func() {
 		printLog(stdOutPipe)
 	})
