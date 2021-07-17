@@ -1,6 +1,9 @@
-package worker
+package work
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 type Manager struct {
 	status     ManagerStatus
@@ -27,4 +30,15 @@ func (manager *Manager) readStatus() ManagerStatus {
 	status := manager.status
 	// TODO need deep copy
 	return status
+}
+
+func (manager *Manager) addNewWork() error {
+	manager.statusLock.Lock()
+	defer manager.statusLock.Unlock()
+	status := &manager.status
+	if status.runningNum >= status.maxNum {
+		return errors.New("已经到达了最高限制，不允许再添加")
+	}
+	// TODO add
+	return nil
 }
