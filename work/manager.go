@@ -8,6 +8,7 @@ import (
 type Manager struct {
 	status     ManagerStatus
 	statusLock sync.RWMutex
+	runningMap map[string]*Worker
 }
 
 type ManagerStatus struct {
@@ -17,10 +18,7 @@ type ManagerStatus struct {
 
 func NewWorkerManager(maxNum int) Manager {
 	return Manager{
-		status: ManagerStatus{
-			maxNum:     maxNum,
-			runningNum: 0,
-		},
+		runningMap: make(map[string]*Worker),
 	}
 }
 
@@ -32,13 +30,19 @@ func (manager *Manager) readStatus() ManagerStatus {
 	return status
 }
 
-func (manager *Manager) addNewWork() error {
+func (manager *Manager) addNewWork(work *NewWork) error {
 	manager.statusLock.Lock()
 	defer manager.statusLock.Unlock()
 	status := &manager.status
 	if status.runningNum >= status.maxNum {
-		return errors.New("已经到达了最高限制，不允许再添加")
+		return errors.New("the task has reached the maximum limit")
 	}
+	exitedWork := manager.runningMap[work.Id]
+	if exitedWork != nil {
+		return errors.New("'" + work.Id + "' already exited")
+	}
+
 	// TODO add
+	manager.status.runningNum += 1
 	return nil
 }
