@@ -11,23 +11,15 @@ const (
 )
 
 type CommandWorkType struct {
-	Source   Source
+	Sources  []Source
 	Cmds     []string
 	WorkPath string
-}
-
-type GitCommandWorkType struct {
-	GitRepo  string
-	Cmds     []string
-	WorkPath string
-}
-
-type Source struct {
-	Type          int
-	SourceAddress string
-	SourceAttr    interface{}
 }
 
 type Worker struct {
 	Num int
+}
+
+func NewWorker(newWork *NewWork) {
+
 }

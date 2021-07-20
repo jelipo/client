@@ -18,11 +18,13 @@ type ManagerStatus struct {
 
 func NewWorkerManager(maxNum int) Manager {
 	return Manager{
+		status:     ManagerStatus{},
+		statusLock: sync.RWMutex{},
 		runningMap: make(map[string]*Worker),
 	}
 }
 
-func (manager *Manager) readStatus() ManagerStatus {
+func (manager *Manager) ReadStatus() ManagerStatus {
 	manager.statusLock.RLock()
 	defer manager.statusLock.RUnlock()
 	status := manager.status
@@ -30,9 +32,10 @@ func (manager *Manager) readStatus() ManagerStatus {
 	return status
 }
 
-func (manager *Manager) addNewWork(work *NewWork) error {
+func (manager *Manager) AddNewWork(work *NewWork) error {
 	manager.statusLock.Lock()
 	defer manager.statusLock.Unlock()
+	// check status
 	status := &manager.status
 	if status.runningNum >= status.maxNum {
 		return errors.New("the task has reached the maximum limit")
@@ -41,8 +44,8 @@ func (manager *Manager) addNewWork(work *NewWork) error {
 	if exitedWork != nil {
 		return errors.New("'" + work.Id + "' already exited")
 	}
+	// TODO creat new work
 
-	// TODO add
 	manager.status.runningNum += 1
 	return nil
 }
