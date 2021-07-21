@@ -18,7 +18,7 @@ func main() {
 	}
 	fmt.Println(config)
 
-	cmd := exec.Command("/bin/bash", "tem.sh")
+	cmd := exec.Command("bash", "-c", "rustup update && pwd && history")
 	cmd.Dir = "/home/cao/go/client"
 	stdErrPipe, errErr := cmd.StderrPipe()
 	if errErr != nil {
@@ -30,7 +30,9 @@ func main() {
 	}
 
 	env := cmd.Env
+
 	env = append(env, "TEST2=1")
+
 	cmd.Env = env
 	err := cmd.Start()
 	if err != nil {
@@ -58,11 +60,8 @@ func main() {
 	}
 
 	fmt.Println("All Done")
-	println(os.Getenv("JAVA_HOME"))
-	println(os.Getenv("TEST"))
-	for i := range os.Environ() {
-		println(os.Environ()[i])
-	}
+	fmt.Println(os.Getenv("JAVA_HOME"))
+	fmt.Println(os.Getenv("TEST2"))
 }
 
 func printLog(stdPipe io.ReadCloser) {
