@@ -16,9 +16,9 @@ func main() {
 
 	go printLog(&stepLog)
 
-	err := exec.ExecShell("rustupss update")
+	err := exec.ExecShell("rustup update")
 	if err != nil {
-		fmt.Println("cnd error:" + err.Error())
+		fmt.Println("cmd error:" + err.Error())
 	}
 	fmt.Println("done")
 	time.Sleep(time.Duration(99999999) * time.Millisecond)
@@ -26,8 +26,12 @@ func main() {
 
 func printLog(stepLog *work.StepLog) {
 	for true {
-		time.Sleep(time.Duration(50) * time.Millisecond)
+		time.Sleep(time.Duration(500) * time.Millisecond)
 		logs := stepLog.GetLogs(100)
+		if logs == nil {
+			time.Sleep(time.Duration(100) * time.Millisecond)
+			continue
+		}
 		for _, log := range logs {
 			fmt.Print(log.LogBody)
 		}
