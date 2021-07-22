@@ -1,76 +1,36 @@
 package main
 
 import (
-	"client/util"
+	"client/work"
 	"fmt"
-	"io"
-	"os"
-	"os/exec"
+	"time"
 )
 
 func main() {
+	var workdir = "/home/cao/client_temp"
+	stepLog := work.NewStepLog()
+	var cmdStr = "rustup update"
+	var env = make([]string, 0)
+	actionLog := stepLog.NewAction("execute: " + cmdStr)
+	exec := work.NewExec(workdir, &actionLog, env, 0)
 
-	reader := newConfigReader("/home/cao/go/client/config.json")
-	config, readErr := reader.readNewConfig()
-	if readErr != nil {
-		fmt.Println(readErr)
-		return
-	}
-	fmt.Println(config)
+	go printLog(&stepLog)
 
-	cmd := exec.Command("bash", "-c", "rustup update && pwd && history")
-	cmd.Dir = "/home/cao/go/client"
-	stdErrPipe, errErr := cmd.StderrPipe()
-	if errErr != nil {
-		return
-	}
-	stdOutPipe, ouErr := cmd.StdoutPipe()
-	if ouErr != nil {
-		return
-	}
-
-	env := cmd.Env
-
-	env = append(env, "TEST2=1")
-
-	cmd.Env = env
-	err := cmd.Start()
+	err := exec.ExecShell("rustupss update")
 	if err != nil {
-		println(err.Error())
-		return
+		fmt.Println("cnd error:" + err.Error())
 	}
-
-	goPackage := util.NewGoPackage()
-	goPackage.AddAndRun(func() {
-		printLog(stdOutPipe)
-	})
-
-	goPackage.AddAndRun(func() {
-		printLog(stdErrPipe)
-	})
-	goPackage.WaitAllDone()
-	errErr = cmd.Wait()
-
-	if cmd.ProcessState.Exited() {
-		if cmd.ProcessState.ExitCode() != 0 {
-			fmt.Println("Failed! Exit code is ", cmd.ProcessState.ExitCode())
-		} else {
-			fmt.Println("Success!")
-		}
-	}
-
-	fmt.Println("All Done")
-	fmt.Println(os.Getenv("JAVA_HOME"))
-	fmt.Println(os.Getenv("TEST2"))
+	fmt.Println("done")
+	time.Sleep(time.Duration(99999999) * time.Millisecond)
 }
 
-func printLog(stdPipe io.ReadCloser) {
-	buf := make([]byte, 1024)
+func printLog(stepLog *work.StepLog) {
 	for true {
-		read, _ := stdPipe.Read(buf)
-		if read <= 0 {
-			break
+		time.Sleep(time.Duration(50) * time.Millisecond)
+		logs := stepLog.GetLogs(100)
+		for _, log := range logs {
+			fmt.Print(log.LogBody)
 		}
-		fmt.Print(string(buf[:read]))
 	}
+
 }

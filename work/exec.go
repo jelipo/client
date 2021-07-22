@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"time"
 )
 
 //go:embed exec.bash
@@ -18,16 +17,27 @@ type Executor struct {
 	workDir   string
 	actionLog *ActionLog
 	customEnv []string
+	// mill_second
+	timeOut  int
+	stopFlag bool
 }
 
-func NewExec(workDir string, actionLog *ActionLog, customEnv []string) Executor {
-	return Executor{workDir: workDir, actionLog: actionLog, customEnv: customEnv}
+func NewExec(workDir string, actionLog *ActionLog, customEnv []string, timeOut int) Executor {
+	return Executor{
+		workDir:   workDir,
+		actionLog: actionLog,
+		customEnv: customEnv,
+		timeOut:   timeOut,
+		stopFlag:  false,
+	}
 }
 
 func (executor *Executor) ExecShell(shellPart string) error {
-	randomStr := util.RandNumAndLettersStr(10)
+	randomStr := util.RandLowcaseLetters(10)
 	bashFilePath := executor.workDir + "/" + randomStr + ".bash"
 	envFileName := randomStr + ".env"
+	defer os.Remove(bashFilePath)
+	defer os.Remove(executor.workDir + "/" + envFileName)
 	bashFile, err := os.Create(bashFilePath)
 	if err != nil {
 		return err
@@ -53,16 +63,20 @@ func (executor *Executor) ExecShell(shellPart string) error {
 	}
 	goPackage := util.NewGoPackage()
 	goPackage.AddAndRun(func() {
-		listenLog(stdOutPipe, executor.actionLog)
+		listenLog(&stdOutPipe, executor.actionLog)
 	})
 
 	goPackage.AddAndRun(func() {
-		listenLog(stdErrPipe, executor.actionLog)
+		listenLog(&stdErrPipe, executor.actionLog)
 	})
+	startErr := cmd.Start()
+	if startErr != nil {
+		return startErr
+	}
 	goPackage.WaitAllDone()
 	waitErr := cmd.Wait()
 	if waitErr != nil {
-		return err
+		return waitErr
 	}
 	code := cmd.ProcessState.ExitCode()
 	if code != 0 {
@@ -71,20 +85,22 @@ func (executor *Executor) ExecShell(shellPart string) error {
 	return nil
 }
 
-func listenLog(stdPipe io.ReadCloser, actionLog *ActionLog) {
-	buf := make([]byte, 4096)
+func listenLog(stdPipe *io.ReadCloser, actionLog *ActionLog) {
+	buf := make([]byte, 1024)
 	for true {
-		time.Sleep(time.Duration(50) * time.Millisecond)
-		read, err := stdPipe.Read(buf)
+		read, err := (*stdPipe).Read(buf)
 		if err != nil {
-			fmt.Println("listen executor log failed")
+			if err == io.EOF {
+				break
+			}
+			fmt.Println("listen executor log failed" + err.Error())
 			break
 		}
 		if read <= 0 {
 			fmt.Println("listen executor finished")
 			break
 		}
-		log := string(buf)
+		log := string(buf[:read])
 		actionLog.AddExecLog(log)
 	}
 }

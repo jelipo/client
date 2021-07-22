@@ -1,7 +1,7 @@
 package work
 
-// ExecLog 执行日志
-type ExecLog struct {
+// AtomLog 执行日志
+type AtomLog struct {
 	LogType int
 	// 日志实体
 	LogBody string
@@ -14,26 +14,42 @@ const (
 )
 
 type StepLog struct {
-	logChannel chan ExecLog
+	logChannel chan AtomLog
 }
 
 func NewStepLog() StepLog {
-	return StepLog{logChannel: make(chan ExecLog, 1024)}
+	return StepLog{logChannel: make(chan AtomLog, 1024)}
 }
 
 func (stepLog *StepLog) NewAction(stepName string) ActionLog {
-	stepLog.logChannel <- ExecLog{LogType: StepLogType, LogBody: stepName}
+	stepLog.logChannel <- AtomLog{LogType: StepLogType, LogBody: stepName}
 	return ActionLog{StepLogChannel: &stepLog.logChannel}
 }
 
+func (stepLog *StepLog) GetLogs(maxSize int) []AtomLog {
+	chanLen := len(stepLog.logChannel)
+	var buffer []AtomLog
+	if chanLen < maxSize {
+		buffer = make([]AtomLog, chanLen)
+	} else {
+		buffer = make([]AtomLog, maxSize)
+	}
+	size := len(buffer)
+	for i := 0; i < size; i++ {
+		log := <-stepLog.logChannel
+		buffer[i] = log
+	}
+	return buffer
+}
+
 type ActionLog struct {
-	StepLogChannel *chan ExecLog
+	StepLogChannel *chan AtomLog
 }
 
 func (actionLog ActionLog) AddExecLog(logBody string) {
-	*actionLog.StepLogChannel <- ExecLog{LogType: ActionLogType, LogBody: logBody}
+	*actionLog.StepLogChannel <- AtomLog{LogType: ActionLogType, LogBody: logBody}
 }
 
 func (actionLog ActionLog) AddSysLog(logBody string) {
-	*actionLog.StepLogChannel <- ExecLog{LogType: SysLogType, LogBody: logBody}
+	*actionLog.StepLogChannel <- AtomLog{LogType: SysLogType, LogBody: logBody}
 }
