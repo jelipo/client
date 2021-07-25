@@ -1,7 +1,5 @@
 package work
 
-import "github.com/go-git/go-git/v5"
-
 type Source struct {
 	Type         int
 	SourceConfig interface{}
@@ -42,10 +40,18 @@ func NewGitSourceHandler(resourceDir string, projectName string, gitConfig *GitS
 
 func (gitHandler GitSourceHandler) HandleSource() error {
 	// TODO Pull git repo
-	actionLog := gitHandler.stepLog.NewAction("Get the git resource : " + gitHandler.projectName)
+	_ = gitHandler.stepLog.NewAction("Get the git resource : " + gitHandler.projectName)
 
-	//executor := NewExec(gitHandler.gitRepoDir, &actionLog, make([]string, 0), 100000)
-
+	//exec := NewExec(gitHandler.gitRepoDir, &actionLog, make([]string, 0), 100000)
+	//fs := osfs.New(gitHandler.gitRepoDir)
+	//stat, err := fs.Stat(git.GitDirName)
+	//if _, err := fs.Stat(git.GitDirName); err == nil {
+	//	fs, err = fs.Chroot(git.GitDirName)
+	//	CheckIfError(err)
+	//}
+	//
+	//s := filesystem.NewStorageWithOptions(fs, cache.NewObjectLRUDefault(), filesystem.Options{KeepDescriptors: true})
+	//git.Open(filesystem.NewStorage())
 	return nil
 }
 
