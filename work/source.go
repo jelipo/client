@@ -1,5 +1,12 @@
 package work
 
+import (
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
+	"os"
+)
+
 type Source struct {
 	Type         int
 	SourceConfig interface{}
@@ -13,6 +20,8 @@ type GitSourceConfig struct {
 	UseCache bool
 	// 拉取方式
 	PullType int
+	Branch   string
+	CommitId string
 }
 
 type SourceHandler interface {
@@ -38,29 +47,57 @@ func NewGitSourceHandler(resourceDir string, projectName string, gitConfig *GitS
 	}
 }
 
-func (gitHandler GitSourceHandler) HandleSource() error {
-	// TODO Pull git repo
-	_ = gitHandler.stepLog.NewAction("Get the git resource : " + gitHandler.projectName)
-
-	//exec := NewExec(gitHandler.gitRepoDir, &actionLog, make([]string, 0), 100000)
-	//fs := osfs.New(gitHandler.gitRepoDir)
-	//stat, err := fs.Stat(git.GitDirName)
-	//if _, err := fs.Stat(git.GitDirName); err == nil {
-	//	fs, err = fs.Chroot(git.GitDirName)
-	//	CheckIfError(err)
-	//}
-	//
-	//s := filesystem.NewStorageWithOptions(fs, cache.NewObjectLRUDefault(), filesystem.Options{KeepDescriptors: true})
-	//git.Open(filesystem.NewStorage())
-	return nil
+func (gitHandler GitSourceHandler) HandleSource() (*string, error) {
+	repo, err := initRepo(gitHandler.gitRepoDir)
+	if err != nil {
+		return nil, err
+	}
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		return nil, err
+	}
+	gitAddr := gitHandler.gitSourceConfig.GitAddress
+	if remote == nil {
+		_, err := repo.CreateRemote(&config.RemoteConfig{
+			Name: "origin",
+			URLs: []string{gitAddr},
+		})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		remote.Config().URLs = []string{gitAddr}
+	}
+	err = repo.Fetch(&git.FetchOptions{RemoteName: "origin", Depth: 1})
+	if err != nil {
+		return nil, err
+	}
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return nil, err
+	}
+	err = worktree.Checkout(&git.CheckoutOptions{Hash: plumbing.NewHash(gitHandler.gitSourceConfig.CommitId)})
+	if err != nil {
+		return nil, err
+	}
+	return &gitHandler.gitRepoDir, nil
 }
 
-func initRepo(actionLog *ActionLog, gitRepoDir string, executor Executor) error {
-	var gitInitCmd = "git init " + gitRepoDir
-	actionLog.AddSysLog(gitInitCmd)
-	gitInitErr := executor.ExecShell(gitInitCmd)
-	if gitInitErr != nil {
-		return gitInitErr
+func initRepo(gitRepoDir string) (*git.Repository, error) {
+	var repo *git.Repository
+	_, err := os.Stat(gitRepoDir)
+	if err != nil && os.IsExist(err) {
+		repo, err = git.PlainOpen(gitRepoDir)
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
+		return nil, err
+	} else {
+		repo, err = git.PlainInit(gitRepoDir, false)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return nil
+	return repo, nil
 }

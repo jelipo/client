@@ -11,23 +11,22 @@ import (
 	"strings"
 )
 
-//go:embed exec.bash
-var baseBashBytes []byte
-
 type Executor struct {
 	workDir    string
 	actionLog  *ActionLog
 	appendEnvs []string
+	recordEnv  bool
 	// mill_second
 	timeOut  int
 	stopFlag bool
 }
 
-func NewExec(workDir string, actionLog *ActionLog, customEnv []string, timeOut int) Executor {
+func NewExec(workDir string, actionLog *ActionLog, customEnv []string, timeOut int, recordEnv bool) Executor {
 	return Executor{
 		workDir:    workDir,
 		actionLog:  actionLog,
 		appendEnvs: customEnv,
+		recordEnv:  recordEnv,
 		timeOut:    timeOut,
 		stopFlag:   false,
 	}
@@ -38,7 +37,11 @@ func (executor *Executor) ExecShell(shellPart string) error {
 	envAbFilePath := executor.workDir + "/" + randomStr + ".env"
 	defer os.Remove(envAbFilePath)
 	//cmd := exec.Command("bash", bashFilePath, shellPart, envFileName)
-	cmd := exec.Command("bash", "-c", shellPart+"\n\nenv >> \""+envAbFilePath+"\"")
+	var fullCmd = shellPart
+	if executor.recordEnv {
+		fullCmd = shellPart + "\n\nenv >> \"" + envAbFilePath + "\""
+	}
+	cmd := exec.Command("bash", "-c", fullCmd)
 	cmd.Dir = executor.workDir
 	// Add custom env
 	env := cmd.Env
@@ -49,12 +52,14 @@ func (executor *Executor) ExecShell(shellPart string) error {
 	if startErr != nil {
 		return startErr
 	}
-	// Read environments
-	afterEnvs, envErr := readEnvs(envAbFilePath)
-	if envErr != nil {
-		return envErr
+	if executor.recordEnv {
+		// Read environments
+		afterEnvs, envErr := readEnvs(envAbFilePath)
+		if envErr != nil {
+			return envErr
+		}
+		executor.appendEnvs = afterEnvs
 	}
-	executor.appendEnvs = afterEnvs
 	return nil
 }
 

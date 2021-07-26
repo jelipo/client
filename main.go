@@ -3,21 +3,18 @@ package main
 import (
 	"client/work"
 	"fmt"
-	"github.com/go-git/go-billy/v5/osfs"
 	"strings"
 	"time"
 )
 
 func main() {
-	fs := osfs.New("/home/cao/client_temp/git")\
-	fs.
 
 	var workdir = "/home/cao/client_temp"
 	stepLog := work.NewStepLog()
 	var cmdStr = "export TEST=1"
 	var env = make([]string, 0)
 	actionLog := stepLog.NewAction("execute: " + cmdStr + "\n")
-	exec := work.NewExec(workdir, &actionLog, env, 0)
+	exec := work.NewExec(workdir, &actionLog, env, 0, false)
 
 	go printLog(&stepLog)
 
