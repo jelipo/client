@@ -56,3 +56,8 @@ func (actionLog ActionLog) AddExecLog(logBody string) {
 func (actionLog ActionLog) AddSysLog(logBody string) {
 	*actionLog.StepLogChannel <- AtomLog{LogType: SysLogType, LogBody: logBody}
 }
+
+func (actionLog ActionLog) Write(bytes []byte) (n int, err error) {
+	*actionLog.StepLogChannel <- AtomLog{LogType: ActionLogType, LogBody: string(bytes)}
+	return len(bytes), nil
+}
