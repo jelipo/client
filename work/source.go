@@ -23,11 +23,10 @@ type Handler interface {
 	HandleSource() (*string, error)
 }
 
-func NewSourceHandler(source *Source, stepWorkDir *WorkDir, stepLog *StepLog) (Handler, error) {
-	resourcesDir := stepWorkDir.ResourcesWorkDir
+func NewSourceHandler(source *Source, resourcesWorkDor string, stepLog *StepLog) (Handler, error) {
 	switch source.Type {
 	case GitSourceType:
-		return NewGitSourceHandler(resourcesDir, source.ProjectName, source.SourceConfig, stepLog)
+		return NewGitSourceHandler(resourcesWorkDor, source.ProjectName, source.SourceConfig, stepLog)
 	case HttpDownloadType:
 		return nil, errors.New("not support HttpDownloadType yet")
 	}
