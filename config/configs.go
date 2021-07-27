@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -6,14 +6,21 @@ import (
 	"os"
 )
 
+var GlobalConfig *Config
+
 //
 type Config struct {
 	Server Server `json:"server"`
+	Local  Local  `json:"local"`
 }
 
 type Server struct {
 	Address string `json:"address"`
 	Token   string `json:"token"`
+}
+
+type Local struct {
+	ClientWorkDir string `json:"client_work_dir"`
 }
 
 type ConfigReader struct {
@@ -36,4 +43,14 @@ func (reader *ConfigReader) readNewConfig() (*Config, error) {
 		return nil, jsonErr
 	}
 	return &config, nil
+}
+
+func IninConfig(path string) error {
+	reader := newConfigReader(path)
+	config, err := reader.readNewConfig()
+	if err != nil {
+		return err
+	}
+	GlobalConfig = config
+	return nil
 }

@@ -1,8 +1,18 @@
 package work
 
+import (
+	"client/config"
+	"encoding/json"
+	"errors"
+	"io/fs"
+	"os"
+)
+
 type NewWork struct {
-	Id   string
-	Type int
+	PipeId   string
+	StepId   string
+	Type     int
+	WorkBody *json.RawMessage
 }
 
 const (
@@ -10,16 +20,25 @@ const (
 	DeployType  = 2
 )
 
-type CommandWorkType struct {
-	Sources  []Source
-	Cmds     []string
-	WorkPath string
+type Worker interface {
+	Start() error
 }
 
-type Worker struct {
-	Num int
-}
-
-func NewWorker(newWork *NewWork) {
-
+func NewWorker(newWork *NewWork) (Worker, error) {
+	clientWorkDir := config.GlobalConfig.Local.ClientWorkDir
+	stepWorkDirPath := clientWorkDir + "/" + newWork.PipeId + "/" + newWork.StepId
+	_, err := os.Stat(stepWorkDirPath)
+	if os.IsNotExist(err) {
+		_ = os.MkdirAll(stepWorkDirPath, fs.ModeDir)
+	}
+	workDir := NewWorkDir(stepWorkDirPath)
+	stepLog := NewStepLog()
+	switch newWork.Type {
+	case CommandType:
+		body := newWork.WorkBody
+		return newCommandWorker(&stepLog, body, &workDir)
+	case DeployType:
+		// TODO Not support yet
+	}
+	return nil, errors.New("not support work type")
 }

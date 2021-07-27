@@ -40,9 +40,9 @@ func (manager *Manager) AddNewWork(work *NewWork) error {
 	if status.runningNum >= status.maxNum {
 		return errors.New("the task has reached the maximum limit")
 	}
-	exitedWork := manager.runningMap[work.Id]
+	exitedWork := manager.runningMap[work.StepId]
 	if exitedWork != nil {
-		return errors.New("'" + work.Id + "' already exited")
+		return errors.New("'" + work.StepId + "' already exited")
 	}
 	// TODO creat new work
 
