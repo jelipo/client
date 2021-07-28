@@ -29,7 +29,7 @@ func (stepLog *StepLog) NewAction(stepName string) ActionLog {
 func (stepLog *StepLog) GetLogs(maxSize int) []AtomLog {
 	chanLen := len(stepLog.logChannel)
 	if chanLen == 0 {
-		return nil
+		return make([]AtomLog, 0)
 	}
 	var buffer []AtomLog
 	if chanLen < maxSize {

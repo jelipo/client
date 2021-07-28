@@ -13,7 +13,6 @@ type NewWork struct {
 	PipeId     string //流水线ID
 	StepId     string //Step ID
 	Type       int    //Work的类型,比如Command/Deploy类型
-	sources    []Source
 	WorkBody   *json.RawMessage
 }
 
@@ -22,11 +21,14 @@ const (
 	DeployType  = 2
 )
 
-type Worker interface {
-	Start() error
+type WorkerStarter struct {
+	source  []Source
+	worker  Worker
+	workDir *WorkDir
+	stepLog StepLog
 }
 
-func NewWorker(newWork *NewWork) (Worker, error) {
+func NewWorkerStarter(sources []Source, newWork *NewWork) (*WorkerStarter, error) {
 	clientWorkDir := config.GlobalConfig.Local.ClientWorkDir
 	stepWorkDirPath := clientWorkDir + "/" + newWork.PipeId + "/" + newWork.StepId
 	_, err := os.Stat(stepWorkDirPath)
@@ -38,18 +40,48 @@ func NewWorker(newWork *NewWork) (Worker, error) {
 		return nil, err
 	}
 	stepLog := NewStepLog()
+	worker, err := newWorker(newWork, workDir, &stepLog)
+	if err != nil {
+		return nil, err
+	}
+	return &WorkerStarter{
+		source:  sources,
+		worker:  worker,
+		workDir: workDir,
+		stepLog: stepLog,
+	}, nil
+}
+
+func (starter *WorkerStarter) Run() error {
+	// Handle the resources
+	err := handleResources(starter.source, starter.workDir, &starter.stepLog)
+	if err != nil {
+		return err
+	}
+	err = starter.worker.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (starter *WorkerStarter) StepLog() StepLog {
+	return starter.stepLog
+}
+
+type Worker interface {
+	// Run the worker
+	Run() error
+}
+
+func newWorker(newWork *NewWork, workDir *WorkDir, stepLog *StepLog) (Worker, error) {
 	switch newWork.Type {
 	case CommandType:
 		body := newWork.WorkBody
-		return newCommandWorker(&stepLog, body, workDir)
+		return newCommandWorker(stepLog, body, workDir)
 	case DeployType:
 		// TODO Not support yet
-		return nil, errors.New("not support yet")
-	}
-	// Handle the resources
-	err = handleResources(newWork.sources, workDir, &stepLog)
-	if err != nil {
-		return nil, err
+		return nil, errors.New("DeployType not support yet")
 	}
 	return nil, errors.New("not support work type")
 }
