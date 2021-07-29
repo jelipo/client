@@ -1,22 +1,22 @@
 package util
 
-type GoroutinesFlag struct {
+type AsyncRunFlag struct {
 	channel chan int
 }
 
-func NewGoroutinesFlagAndRun(fn func()) GoroutinesFlag {
-	flag := GoroutinesFlag{
+func NewAsyncRunFlag(fn func()) AsyncRunFlag {
+	flag := AsyncRunFlag{
 		channel: make(chan int, 1),
 	}
 	go flag.run(fn)
 	return flag
 }
 
-func (flag *GoroutinesFlag) IsDone() bool {
+func (flag *AsyncRunFlag) IsDone() bool {
 	return len(flag.channel) > 0
 }
 
-func (flag *GoroutinesFlag) run(fn func()) {
+func (flag *AsyncRunFlag) run(fn func()) {
 	fn()
 	flag.channel <- 1
 }

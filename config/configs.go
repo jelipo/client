@@ -15,8 +15,9 @@ type Config struct {
 }
 
 type Server struct {
-	Address string `json:"address"`
-	Token   string `json:"token"`
+	Address      string `json:"address"`
+	Token        string `json:"token"`
+	MaxWorkerNum int    `json:"maxWorkerNum"`
 }
 
 type Local struct {

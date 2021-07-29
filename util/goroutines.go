@@ -1,35 +1,34 @@
 package util
 
-import (
-	"sync"
-)
-
-type ThreadGroup struct {
-	workGroup sync.WaitGroup
+type AsyncCollect struct {
+	//workGroup sync.WaitGroup
+	asyncChan chan bool
+	num       int
 	lock      bool
 }
 
-func NewGoPackage() ThreadGroup {
-	return ThreadGroup{
-		workGroup: sync.WaitGroup{},
+func NewAsyncCollect() AsyncCollect {
+	return AsyncCollect{
+		asyncChan: make(chan bool, 1024),
+		num:       0,
 		lock:      false,
 	}
 }
 
-func (pack *ThreadGroup) AddAndRun(a func()) {
+func (pack *AsyncCollect) AddAndRun(a func()) {
 	if pack.lock {
 		return
 	}
 	go pack.run(a)
-	pack.workGroup.Add(1)
+	pack.num = pack.num + 1
+	pack.asyncChan <- true
 }
 
-func (pack *ThreadGroup) WaitAllDone() {
-	pack.lock = true
-	pack.workGroup.Wait()
+func (pack *AsyncCollect) IsAllDone() bool {
+	return len(pack.asyncChan) == 0
 }
 
-func (pack *ThreadGroup) run(a func()) {
+func (pack *AsyncCollect) run(a func()) {
 	a()
-	pack.workGroup.Done()
+	_ = <-pack.asyncChan
 }

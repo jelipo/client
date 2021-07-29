@@ -19,14 +19,14 @@ type ManagerStatus struct {
 }
 
 type WorkerStatus struct {
-	flag    util.GoroutinesFlag
+	flag    util.AsyncRunFlag
 	starter *WorkerStarter
 }
 
 type WorkerOutStatus struct {
-	pipeSoleId string
-	atomLogs   []AtomLog
-	done       bool
+	workerId string
+	atomLogs []AtomLog
+	done     bool
 }
 
 func NewWorkerManager(maxNum int) Manager {
@@ -42,19 +42,19 @@ func (manager *Manager) ReadStatus() ManagerStatus {
 	defer manager.statusLock.RUnlock()
 	status := manager.status
 	var statusMap = make(map[string]WorkerOutStatus, status.maxNum)
-	for pipeSoleId, workerStatus := range manager.runningMap {
+	for workerId, workerStatus := range manager.runningMap {
 		stepLog := workerStatus.starter.StepLog()
 		logs := stepLog.GetLogs(100)
 		outStatus := WorkerOutStatus{
-			pipeSoleId: pipeSoleId,
-			atomLogs:   logs,
-			done:       workerStatus.flag.IsDone(),
+			workerId: workerId,
+			atomLogs: logs,
+			done:     workerStatus.flag.IsDone(),
 		}
-		statusMap[pipeSoleId] = outStatus
+		statusMap[workerId] = outStatus
 	}
 	for _, outStatus := range statusMap {
 		if outStatus.done {
-			delete(manager.runningMap, outStatus.pipeSoleId)
+			delete(manager.runningMap, outStatus.workerId)
 		}
 	}
 	return status
@@ -68,17 +68,17 @@ func (manager *Manager) AddNewWork(sources []Source, newWork *NewWork) error {
 	if status.runningNum >= status.maxNum {
 		return errors.New("the task has reached the maximum limit")
 	}
-	_, ok := manager.runningMap[newWork.PipeSoleId]
+	_, ok := manager.runningMap[newWork.WorkerId]
 	if ok {
-		return errors.New("'" + newWork.PipeSoleId + "' already exited")
+		return errors.New("'" + newWork.WorkerId + "' already exited")
 	}
 	// creat new work
 	starter, err := NewWorkerStarter(sources, newWork)
 	if err != nil {
 		return err
 	}
-	flag := goRunWorker(starter)
-	manager.runningMap[newWork.PipeSoleId] = WorkerStatus{
+	flag := asyncRunWorker(starter)
+	manager.runningMap[newWork.WorkerId] = WorkerStatus{
 		flag:    flag,
 		starter: starter,
 	}
@@ -86,14 +86,14 @@ func (manager *Manager) AddNewWork(sources []Source, newWork *NewWork) error {
 	return nil
 }
 
-func goRunWorker(starter *WorkerStarter) util.GoroutinesFlag {
-	return util.NewGoroutinesFlagAndRun(func() {
+func asyncRunWorker(starter *WorkerStarter) util.AsyncRunFlag {
+	return util.NewAsyncRunFlag(func() {
 		run(starter)
 	})
 }
 
 func run(starter *WorkerStarter) {
-	err := starter.Run()
+	err := starter.RunStarter()
 	if err != nil {
 		fmt.Println(err)
 		return

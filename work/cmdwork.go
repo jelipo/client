@@ -10,10 +10,11 @@ type CommandWork struct {
 }
 
 type CommandWorker struct {
-	cmds    []string
-	envs    []string
-	workDir *WorkDir
-	stepLog *StepLog
+	cmds     []string
+	envs     []string
+	workDir  *WorkDir
+	stepLog  *StepLog
+	stopChan chan bool
 }
 
 func newCommandWorker(stepLog *StepLog, workBody *json.RawMessage, stepWorkDir *WorkDir) (*CommandWorker, error) {
@@ -34,7 +35,16 @@ func newCommandWorker(stepLog *StepLog, workBody *json.RawMessage, stepWorkDir *
 func (cmdWorker *CommandWorker) Run() error {
 	for _, cmd := range cmdWorker.cmds {
 		actionLog := cmdWorker.stepLog.NewAction("Execute command: " + cmd)
-		NewExec(cmdWorker.workDir.MainWorkDir, &actionLog, cmdWorker.envs, 10000, true)
+		exec := NewExec(cmdWorker.workDir.MainWorkDir, &actionLog, cmdWorker.envs, 10000, true, &cmdWorker.stopChan)
+		err := exec.ExecShell(cmd)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func (cmdWorker *CommandWorker) Stop() error {
+	cmdWorker.stopChan <- true
 	return nil
 }

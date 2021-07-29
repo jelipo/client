@@ -9,11 +9,11 @@ import (
 )
 
 type NewWork struct {
-	PipeSoleId string //执行流水线的唯一ID
-	PipeId     string //流水线ID
-	StepId     string //Step ID
-	Type       int    //Work的类型,比如Command/Deploy类型
-	WorkBody   *json.RawMessage
+	WorkerId string //执行流水线的唯一ID
+	PipeId   string //流水线ID
+	StepId   string //Step ID
+	Type     int    //Work的类型,比如Command/Deploy类型
+	WorkBody *json.RawMessage
 }
 
 const (
@@ -52,7 +52,7 @@ func NewWorkerStarter(sources []Source, newWork *NewWork) (*WorkerStarter, error
 	}, nil
 }
 
-func (starter *WorkerStarter) Run() error {
+func (starter *WorkerStarter) RunStarter() error {
 	// Handle the resources
 	err := handleResources(starter.source, starter.workDir, &starter.stepLog)
 	if err != nil {
@@ -72,6 +72,9 @@ func (starter *WorkerStarter) StepLog() StepLog {
 type Worker interface {
 	// Run the worker
 	Run() error
+
+	// Stop the worker
+	Stop() error
 }
 
 func newWorker(newWork *NewWork, workDir *WorkDir, stepLog *StepLog) (Worker, error) {

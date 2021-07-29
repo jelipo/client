@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 type Executor struct {
@@ -19,9 +20,10 @@ type Executor struct {
 	// mill_second
 	timeOut  int
 	stopFlag bool
+	stopChan *chan bool
 }
 
-func NewExec(workDir string, actionLog *ActionLog, customEnv []string, timeOut int, recordEnv bool) Executor {
+func NewExec(workDir string, actionLog *ActionLog, customEnv []string, timeOut int, recordEnv bool, stopChan *chan bool) Executor {
 	return Executor{
 		workDir:    workDir,
 		actionLog:  actionLog,
@@ -29,6 +31,7 @@ func NewExec(workDir string, actionLog *ActionLog, customEnv []string, timeOut i
 		recordEnv:  recordEnv,
 		timeOut:    timeOut,
 		stopFlag:   false,
+		stopChan:   stopChan,
 	}
 }
 
@@ -63,26 +66,6 @@ func (executor *Executor) ExecShell(shellPart string) error {
 	return nil
 }
 
-func listenLog(stdPipe *io.ReadCloser, actionLog *ActionLog) {
-	buf := make([]byte, 1024)
-	for true {
-		read, err := (*stdPipe).Read(buf)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			fmt.Println("listen executor log failed" + err.Error())
-			break
-		}
-		if read <= 0 {
-			fmt.Println("listen executor finished")
-			break
-		}
-		log := string(buf[:read])
-		actionLog.AddExecLog(log)
-	}
-}
-
 func (executor *Executor) startAndWait(cmd *exec.Cmd) error {
 	stdErrPipe, errErr := cmd.StderrPipe()
 	if errErr != nil {
@@ -92,7 +75,7 @@ func (executor *Executor) startAndWait(cmd *exec.Cmd) error {
 	if outErr != nil {
 		return outErr
 	}
-	goPackage := util.NewGoPackage()
+	goPackage := util.NewAsyncCollect()
 	goPackage.AddAndRun(func() {
 		listenLog(&stdOutPipe, executor.actionLog)
 	})
@@ -103,7 +86,20 @@ func (executor *Executor) startAndWait(cmd *exec.Cmd) error {
 	if startErr != nil {
 		return startErr
 	}
-	goPackage.WaitAllDone()
+	for true {
+		if goPackage.IsAllDone() {
+			break
+		} else {
+			if len(*executor.stopChan) != 0 {
+				err := cmd.Process.Kill()
+				if err != nil {
+					return err
+				}
+			} else {
+				time.Sleep(time.Duration(100) * time.Millisecond)
+			}
+		}
+	}
 	waitErr := cmd.Wait()
 	if waitErr != nil {
 		return waitErr
@@ -127,4 +123,24 @@ func readEnvs(envAbFilePath string) ([]string, error) {
 
 func (executor *Executor) GetEnvs() *[]string {
 	return &executor.appendEnvs
+}
+
+func listenLog(stdPipe *io.ReadCloser, actionLog *ActionLog) {
+	buf := make([]byte, 1024)
+	for true {
+		read, err := (*stdPipe).Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			fmt.Println("listen executor log failed" + err.Error())
+			break
+		}
+		if read <= 0 {
+			fmt.Println("listen executor finished")
+			break
+		}
+		log := string(buf[:read])
+		actionLog.AddExecLog(log)
+	}
 }

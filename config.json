@@ -1,7 +1,8 @@
 {
   "server": {
     "address": "http://localhost",
-    "token": "test-token"
+    "token": "test-token",
+    "maxWorkerNum": 2
   },
   "local": {
     "client_work_dir": "/home/cao/client_temp"
