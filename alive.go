@@ -3,8 +3,12 @@ package main
 import "client/work"
 
 type RunnerAlive struct {
-	serverAddress string
-	token         string
+	serverAddress   string
+	token           string
+	workStatusCache map[string]WorkStatusCache
+}
+
+type WorkStatusCache struct {
 }
 
 func NewRunnerAlive(serverAddr string, token string) RunnerAlive {

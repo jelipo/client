@@ -10,7 +10,7 @@ import (
 type Manager struct {
 	status     ManagerStatus
 	statusLock sync.RWMutex
-	runningMap map[string]WorkerStatus
+	runningMap map[string]WorkerRunningStatus
 }
 
 type ManagerStatus struct {
@@ -18,46 +18,46 @@ type ManagerStatus struct {
 	runningNum int
 }
 
-type WorkerStatus struct {
+type WorkerRunningStatus struct {
 	flag    util.AsyncRunFlag
 	starter *WorkerStarter
 }
 
 type WorkerOutStatus struct {
-	workerId string
-	atomLogs []AtomLog
-	done     bool
+	JobRunningId string
+	atomLogs     []AtomLog
+	done         bool
 }
 
 func NewWorkerManager(maxNum int) Manager {
 	return Manager{
-		status:     ManagerStatus{},
+		status:     ManagerStatus{maxNum: maxNum, runningNum: 0},
 		statusLock: sync.RWMutex{},
-		runningMap: make(map[string]WorkerStatus, 128),
+		runningMap: make(map[string]WorkerRunningStatus, 128),
 	}
 }
 
-func (manager *Manager) ReadStatus() ManagerStatus {
+func (manager *Manager) ReadStatus() (ManagerStatus, map[string]WorkerOutStatus) {
 	manager.statusLock.RLock()
 	defer manager.statusLock.RUnlock()
 	status := manager.status
 	var statusMap = make(map[string]WorkerOutStatus, status.maxNum)
-	for workerId, workerStatus := range manager.runningMap {
+	for JobRunningId, workerStatus := range manager.runningMap {
 		stepLog := workerStatus.starter.StepLog()
 		logs := stepLog.GetLogs(100)
 		outStatus := WorkerOutStatus{
-			workerId: workerId,
-			atomLogs: logs,
-			done:     workerStatus.flag.IsDone(),
+			JobRunningId: JobRunningId,
+			atomLogs:     logs,
+			done:         workerStatus.flag.IsDone(),
 		}
-		statusMap[workerId] = outStatus
+		statusMap[JobRunningId] = outStatus
 	}
 	for _, outStatus := range statusMap {
 		if outStatus.done {
-			delete(manager.runningMap, outStatus.workerId)
+			delete(manager.runningMap, outStatus.JobRunningId)
 		}
 	}
-	return status
+	return status, statusMap
 }
 
 func (manager *Manager) AddNewWork(sources []Source, newWork *NewWork) error {
@@ -68,9 +68,9 @@ func (manager *Manager) AddNewWork(sources []Source, newWork *NewWork) error {
 	if status.runningNum >= status.maxNum {
 		return errors.New("the task has reached the maximum limit")
 	}
-	_, ok := manager.runningMap[newWork.WorkerId]
+	_, ok := manager.runningMap[newWork.JobRunningId]
 	if ok {
-		return errors.New("'" + newWork.WorkerId + "' already exited")
+		return errors.New("'" + newWork.JobRunningId + "' already exited")
 	}
 	// creat new work
 	starter, err := NewWorkerStarter(sources, newWork)
@@ -78,7 +78,7 @@ func (manager *Manager) AddNewWork(sources []Source, newWork *NewWork) error {
 		return err
 	}
 	flag := asyncRunWorker(starter)
-	manager.runningMap[newWork.WorkerId] = WorkerStatus{
+	manager.runningMap[newWork.JobRunningId] = WorkerRunningStatus{
 		flag:    flag,
 		starter: starter,
 	}

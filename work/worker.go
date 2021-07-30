@@ -9,11 +9,11 @@ import (
 )
 
 type NewWork struct {
-	WorkerId string //执行流水线的唯一ID
-	PipeId   string //流水线ID
-	StepId   string //Step ID
-	Type     int    //Work的类型,比如Command/Deploy类型
-	WorkBody *json.RawMessage
+	JobRunningId string //执行流水线的唯一ID
+	PipeId       string //流水线ID
+	StepId       string //Step ID
+	Type         int    //Work的类型,比如Command/Deploy类型
+	WorkBody     *json.RawMessage
 }
 
 const (
