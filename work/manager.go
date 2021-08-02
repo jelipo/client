@@ -25,8 +25,8 @@ type WorkerRunningStatus struct {
 
 type WorkerOutStatus struct {
 	JobRunningId string
-	atomLogs     []AtomLog
-	done         bool
+	AtomLogs     []AtomLog
+	Done         bool
 }
 
 func NewWorkerManager(maxNum int) Manager {
@@ -60,7 +60,7 @@ func (manager *Manager) ReadStatus() (ManagerStatus, map[string]WorkerOutStatus)
 	return status, statusMap
 }
 
-func (manager *Manager) AddNewWork(sources []Source, newWork *NewWork) error {
+func (manager *Manager) AddNewJob(jobRunningId string, sources []Source, newWork *NewWork) error {
 	manager.statusLock.Lock()
 	defer manager.statusLock.Unlock()
 	// check status
@@ -68,9 +68,9 @@ func (manager *Manager) AddNewWork(sources []Source, newWork *NewWork) error {
 	if status.runningNum >= status.maxNum {
 		return errors.New("the task has reached the maximum limit")
 	}
-	_, ok := manager.runningMap[newWork.JobRunningId]
+	_, ok := manager.runningMap[jobRunningId]
 	if ok {
-		return errors.New("'" + newWork.JobRunningId + "' already exited")
+		return errors.New("'" + jobRunningId + "' already exited")
 	}
 	// creat new work
 	starter, err := NewWorkerStarter(sources, newWork)
@@ -78,7 +78,7 @@ func (manager *Manager) AddNewWork(sources []Source, newWork *NewWork) error {
 		return err
 	}
 	flag := asyncRunWorker(starter)
-	manager.runningMap[newWork.JobRunningId] = WorkerRunningStatus{
+	manager.runningMap[jobRunningId] = WorkerRunningStatus{
 		flag:    flag,
 		starter: starter,
 	}

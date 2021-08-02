@@ -2,9 +2,9 @@ package work
 
 // AtomLog 执行日志
 type AtomLog struct {
-	LogType int
+	LogType int `json:"logType"`
 	// 日志实体
-	LogBody string
+	LogBody string `json:"logBody"`
 }
 
 const (

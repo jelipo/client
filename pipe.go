@@ -16,8 +16,9 @@ func NewPipeManager() PipeManager {
 	}
 }
 
-func run() {
+func (manager *PipeManager) run() {
 	for true {
+		manageStatus, workersStatus := manager.workerManager.ReadStatus()
 
 		time.Sleep(time.Duration(2000) * time.Millisecond)
 	}

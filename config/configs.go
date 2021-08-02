@@ -15,6 +15,7 @@ type Config struct {
 }
 
 type Server struct {
+	ClientId     string `json:"clientId"`
 	Address      string `json:"address"`
 	Token        string `json:"token"`
 	MaxWorkerNum int    `json:"maxWorkerNum"`

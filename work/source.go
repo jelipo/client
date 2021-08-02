@@ -6,10 +6,10 @@ import (
 )
 
 type Source struct {
-	Type         int
-	UseCache     bool //是否使用缓存
-	ProjectName  string
-	SourceConfig *json.RawMessage
+	Type         int              `json:"type"`
+	UseCache     bool             `json:"useCache"` //是否使用缓存
+	ProjectName  string           `json:"projectName"`
+	SourceConfig *json.RawMessage `json:"sourceConfig"`
 }
 
 const (

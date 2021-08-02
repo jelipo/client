@@ -9,11 +9,10 @@ import (
 )
 
 type NewWork struct {
-	JobRunningId string //执行流水线的唯一ID
-	PipeId       string //流水线ID
-	StepId       string //Step ID
-	Type         int    //Work的类型,比如Command/Deploy类型
-	WorkBody     *json.RawMessage
+	PipeId   string           `json:"pipeId"` //流水线ID
+	StepId   string           `json:"stepId"` //Step ID
+	Type     int              `json:"type"`   //Work的类型,比如Command/Deploy类型
+	WorkBody *json.RawMessage `json:"workBody"`
 }
 
 const (
@@ -118,8 +117,4 @@ func handleResources(sources []Source, workDir *WorkDir, stepLog *StepLog) error
 		return err
 	}
 	return nil
-}
-
-func cleanTemp() {
-
 }
