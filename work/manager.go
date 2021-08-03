@@ -47,13 +47,13 @@ func (manager *Manager) ReadStatus() (ManagerStatus, map[string]WorkerOutStatus)
 		logs := stepLog.GetLogs(100)
 		outStatus := WorkerOutStatus{
 			JobRunningId: JobRunningId,
-			atomLogs:     logs,
-			done:         workerStatus.flag.IsDone(),
+			AtomLogs:     logs,
+			Done:         workerStatus.flag.IsDone(),
 		}
 		statusMap[JobRunningId] = outStatus
 	}
 	for _, outStatus := range statusMap {
-		if outStatus.done {
+		if outStatus.Done {
 			delete(manager.runningMap, outStatus.JobRunningId)
 		}
 	}

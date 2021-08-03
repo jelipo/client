@@ -13,7 +13,8 @@ func main() {
 	if err != nil {
 		return
 	}
-
+	pipeManager := NewPipeManager()
+	pipeManager.run()
 }
 
 func printLog(stepLog *work.StepLog) {
