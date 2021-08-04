@@ -22,7 +22,7 @@ func NewStepLog() StepLog {
 }
 
 func (stepLog *StepLog) NewAction(stepName string) ActionLog {
-	stepLog.logChannel <- AtomLog{LogType: StepLogType, LogBody: stepName}
+	stepLog.logChannel <- AtomLog{LogType: StepLogType, LogBody: stepName + "\n"}
 	return ActionLog{StepLogChannel: &stepLog.logChannel}
 }
 

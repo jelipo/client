@@ -23,7 +23,8 @@ func (manager *PipeManager) run() {
 	for true {
 		fmt.Println("Start get new job from server")
 		manager.aliveServer()
-		time.Sleep(time.Duration(2000) * time.Millisecond)
+		var sleepMills = 2000
+		time.Sleep(time.Duration(sleepMills) * time.Millisecond)
 	}
 }
 

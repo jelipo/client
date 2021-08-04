@@ -9,10 +9,10 @@ import (
 )
 
 type NewWork struct {
-	PipeId   string           `json:"pipeId"` //流水线ID
-	StepId   string           `json:"stepId"` //Step ID
-	Type     int              `json:"type"`   //Work的类型,比如Command/Deploy类型
-	WorkBody *json.RawMessage `json:"workBody"`
+	PipeId     string           `json:"pipeId"` //流水线ID
+	StepId     string           `json:"stepId"` //Step ID
+	Type       int              `json:"type"`   //Work的类型,比如Command/Deploy类型
+	WorkConfig *json.RawMessage `json:"workConfig"`
 }
 
 const (
@@ -32,14 +32,24 @@ func NewWorkerStarter(sources []Source, newWork *NewWork) (*WorkerStarter, error
 	stepWorkDirPath := clientWorkDir + "/" + newWork.PipeId + "/" + newWork.StepId
 	_, err := os.Stat(stepWorkDirPath)
 	if os.IsNotExist(err) {
-		_ = os.MkdirAll(stepWorkDirPath, fs.ModeDir)
+		_ = os.MkdirAll(stepWorkDirPath, fs.ModePerm)
 	}
-	workDir, err := NewWorkDir(stepWorkDirPath)
+	var mainSourceName string
+	for _, source := range sources {
+		if source.IsMainSource {
+			mainSourceName = source.ProjectName
+		}
+	}
+	workDir, err := NewWorkDir(stepWorkDirPath, mainSourceName)
 	if err != nil {
 		return nil, err
 	}
 	stepLog := NewStepLog()
 	worker, err := newWorker(newWork, workDir, &stepLog)
+	err = workDir.CleanWorkDir()
+	if err != nil {
+		return nil, err
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +89,7 @@ type Worker interface {
 func newWorker(newWork *NewWork, workDir *WorkDir, stepLog *StepLog) (Worker, error) {
 	switch newWork.Type {
 	case CommandType:
-		body := newWork.WorkBody
+		body := newWork.WorkConfig
 		return newCommandWorker(stepLog, body, workDir)
 	case DeployType:
 		// TODO Not support yet

@@ -7,12 +7,14 @@ type WorkDir struct {
 	ResourcesWorkDir string
 	MainWorkDir      string
 	TempWorkDir      string
+	MainSourceDir    string
 }
 
-func NewWorkDir(stepWorkDir string) (*WorkDir, error) {
+func NewWorkDir(stepWorkDir string, mainSourceName string) (*WorkDir, error) {
 	resourcesWorkDir := stepWorkDir + "/resources"
 	mainWorkDir := stepWorkDir + "/work"
 	tempWorkDir := stepWorkDir + "/temp"
+	mainSourceDir := mainWorkDir + "/" + mainSourceName
 	err := mkdirDirs([]string{resourcesWorkDir, mainWorkDir, tempWorkDir})
 	if err != nil {
 		return nil, err
@@ -22,6 +24,7 @@ func NewWorkDir(stepWorkDir string) (*WorkDir, error) {
 		ResourcesWorkDir: resourcesWorkDir,
 		MainWorkDir:      mainWorkDir,
 		TempWorkDir:      tempWorkDir,
+		MainSourceDir:    mainSourceDir,
 	}, nil
 }
 
@@ -31,11 +34,24 @@ func (workDir WorkDir) ProjectMainWorkDir(projectName string) string {
 
 func (workDir WorkDir) CleanTempDir() error {
 	tempDir := workDir.TempWorkDir
-	err := os.Remove(tempDir)
+	err := os.RemoveAll(tempDir)
 	if err != nil {
 		return nil
 	}
-	err = os.MkdirAll(workDir.TempWorkDir, os.ModeDir)
+	err = os.MkdirAll(workDir.TempWorkDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (workDir WorkDir) CleanWorkDir() error {
+	mainWorkDir := workDir.MainWorkDir
+	err := os.RemoveAll(mainWorkDir)
+	if err != nil {
+		return nil
+	}
+	err = os.MkdirAll(workDir.MainWorkDir, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -44,7 +60,7 @@ func (workDir WorkDir) CleanTempDir() error {
 
 func mkdirDirs(dirs []string) error {
 	for _, dir := range dirs {
-		err := os.MkdirAll(dir, os.ModeDir)
+		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
 			return err
 		}

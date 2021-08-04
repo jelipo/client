@@ -6,6 +6,7 @@ import (
 )
 
 type Source struct {
+	IsMainSource bool             `json:"isMainSource"`
 	Type         int              `json:"type"`
 	UseCache     bool             `json:"useCache"` //是否使用缓存
 	ProjectName  string           `json:"projectName"`

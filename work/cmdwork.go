@@ -35,7 +35,7 @@ func newCommandWorker(stepLog *StepLog, workBody *json.RawMessage, stepWorkDir *
 func (cmdWorker *CommandWorker) Run() error {
 	for _, cmd := range cmdWorker.cmds {
 		actionLog := cmdWorker.stepLog.NewAction("Execute command: " + cmd)
-		exec := NewExec(cmdWorker.workDir.MainWorkDir, &actionLog, cmdWorker.envs, 10000, true, &cmdWorker.stopChan)
+		exec := NewExec(cmdWorker.workDir.MainSourceDir, &actionLog, cmdWorker.envs, 10000, true, &cmdWorker.stopChan)
 		err := exec.ExecShell(cmd)
 		if err != nil {
 			return err

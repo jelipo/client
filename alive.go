@@ -5,6 +5,8 @@ import (
 	"client/config"
 	"client/work"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -70,21 +72,35 @@ func serverRequest(runnerId string, runnerToken string, aliveRequest *AliveReque
 	}
 	request.Header.Add("RUNNER_ID", runnerId)
 	request.Header.Add("RUNNER_TOKEN", runnerToken)
+	request.Header.Add("Content-Type", "application/json")
 	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
+	if response.StatusCode != 200 {
+		body, _ := readBody(response)
+		errorMsg := fmt.Sprintf("request alive server error,httpcode:%d ,body:%s", response.StatusCode, body)
+		return nil, errors.New(errorMsg)
+	}
+	body, err := readBody(response)
+	if err != nil {
+		return nil, err
+	}
+	var aliveResponse AliveResponse
+	err = json.Unmarshal(body, &aliveResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &aliveResponse, nil
+}
+
+func readBody(response *http.Response) ([]byte, error) {
 	defer response.Body.Close()
 	responseBodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
-	var aliveResponse AliveResponse
-	err = json.Unmarshal(responseBodyBytes, &aliveResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &aliveResponse, nil
+	return responseBodyBytes, nil
 }
 
 type NewJob struct {
