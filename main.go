@@ -4,11 +4,13 @@ import (
 	"client/config"
 	"client/work"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
 
 func main() {
+	logrus.Info("Hello World")
 	err := config.IninConfig("/home/cao/go/client/config.json")
 	if err != nil {
 		return

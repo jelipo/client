@@ -8,9 +8,9 @@ type AtomLog struct {
 }
 
 const (
-	ActionLogType = 1
-	StepLogType   = 2
-	SysLogType    = 3
+	ActionLogType  = 1
+	ActionNameType = 2
+	SysLogType     = 3
 )
 
 type StepLog struct {
@@ -21,8 +21,8 @@ func NewStepLog() StepLog {
 	return StepLog{logChannel: make(chan AtomLog, 1024)}
 }
 
-func (stepLog *StepLog) NewAction(stepName string) ActionLog {
-	stepLog.logChannel <- AtomLog{LogType: StepLogType, LogBody: stepName + "\n"}
+func (stepLog *StepLog) NewAction(actionName string) ActionLog {
+	stepLog.logChannel <- AtomLog{LogType: ActionNameType, LogBody: actionName + "\n"}
 	return ActionLog{StepLogChannel: &stepLog.logChannel}
 }
 

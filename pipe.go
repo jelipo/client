@@ -4,6 +4,7 @@ import (
 	"client/config"
 	"client/work"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -21,7 +22,7 @@ func NewPipeManager() PipeManager {
 
 func (manager *PipeManager) run() {
 	for true {
-		fmt.Println("Start get new job from server")
+		log.Println("Start get new job from server")
 		manager.aliveServer()
 		var sleepMills = 2000
 		time.Sleep(time.Duration(sleepMills) * time.Millisecond)
@@ -32,7 +33,7 @@ func (manager *PipeManager) aliveServer() {
 	manageStatus, workersStatus := manager.workerManager.ReadStatus()
 	alive, err := manager.runnerAlive.alive(&manageStatus, workersStatus, make([]string, 0))
 	if err != nil {
-		fmt.Println("alive error:" + err.Error())
+		log.Println("alive error:" + err.Error())
 		return
 	}
 	newJobs := alive.NewJobs
@@ -41,7 +42,7 @@ func (manager *PipeManager) aliveServer() {
 		err := manager.workerManager.AddNewJob(job.JobRunningId, job.Sources, &job.NewWork)
 		if err != nil {
 			// TODO
-			fmt.Println("add new job error" + err.Error())
+			log.Println("add new job error" + err.Error())
 			return
 		}
 	}

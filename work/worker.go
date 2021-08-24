@@ -35,11 +35,16 @@ func NewWorkerStarter(sources []Source, newWork *NewWork) (*WorkerStarter, error
 		_ = os.MkdirAll(stepWorkDirPath, fs.ModePerm)
 	}
 	var mainSourceName string
-	for _, source := range sources {
-		if source.IsMainSource {
-			mainSourceName = source.ProjectName
+	if sources == nil || len(sources) == 0 {
+		mainSourceName = ""
+	} else {
+		for _, source := range sources {
+			if source.IsMainSource {
+				mainSourceName = source.ProjectName
+			}
 		}
 	}
+
 	workDir, err := NewWorkDir(stepWorkDirPath, mainSourceName)
 	if err != nil {
 		return nil, err
@@ -47,9 +52,6 @@ func NewWorkerStarter(sources []Source, newWork *NewWork) (*WorkerStarter, error
 	stepLog := NewStepLog()
 	worker, err := newWorker(newWork, workDir, &stepLog)
 	err = workDir.CleanWorkDir()
-	if err != nil {
-		return nil, err
-	}
 	if err != nil {
 		return nil, err
 	}
