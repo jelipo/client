@@ -19,7 +19,7 @@ func main() {
 	pipeManager.run()
 }
 
-func printLog(stepLog *work.StepLog) {
+func printLog(stepLog *work.JobLog) {
 	for true {
 		time.Sleep(time.Duration(500) * time.Millisecond)
 		logs := stepLog.GetLogs(100)

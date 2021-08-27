@@ -13,11 +13,11 @@ type CommandWorker struct {
 	cmds     []string
 	envs     []string
 	workDir  *WorkDir
-	stepLog  *StepLog
+	stepLog  *JobLog
 	stopChan chan bool
 }
 
-func newCommandWorker(stepLog *StepLog, workBody *json.RawMessage, stepWorkDir *WorkDir) (*CommandWorker, error) {
+func newCommandWorker(stepLog *JobLog, workBody *json.RawMessage, stepWorkDir *WorkDir) (*CommandWorker, error) {
 	var cmdWork CommandWork
 	err := json.Unmarshal(*workBody, &cmdWork)
 	if err != nil {

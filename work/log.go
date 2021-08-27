@@ -5,6 +5,8 @@ type AtomLog struct {
 	LogType int `json:"logType"`
 	// 日志实体
 	LogBody string `json:"logBody"`
+
+	OrderId int `json:"orderId"`
 }
 
 const (
@@ -13,20 +15,20 @@ const (
 	SysLogType     = 3
 )
 
-type StepLog struct {
+type JobLog struct {
 	logChannel chan AtomLog
 }
 
-func NewStepLog() StepLog {
-	return StepLog{logChannel: make(chan AtomLog, 1024)}
+func NewStepLog() JobLog {
+	return JobLog{logChannel: make(chan AtomLog, 1024)}
 }
 
-func (stepLog *StepLog) NewAction(actionName string) ActionLog {
+func (stepLog *JobLog) NewAction(actionName string) ActionLog {
 	stepLog.logChannel <- AtomLog{LogType: ActionNameType, LogBody: actionName + "\n"}
-	return ActionLog{StepLogChannel: &stepLog.logChannel}
+	return ActionLog{StepLogChannel: &stepLog.logChannel, orderIdTemp: 0}
 }
 
-func (stepLog *StepLog) GetLogs(maxSize int) []AtomLog {
+func (stepLog *JobLog) GetLogs(maxSize int) []AtomLog {
 	chanLen := len(stepLog.logChannel)
 	if chanLen == 0 {
 		return make([]AtomLog, 0)
@@ -47,17 +49,23 @@ func (stepLog *StepLog) GetLogs(maxSize int) []AtomLog {
 
 type ActionLog struct {
 	StepLogChannel *chan AtomLog
+	orderIdTemp    int
 }
 
-func (actionLog ActionLog) AddExecLog(logBody string) {
-	*actionLog.StepLogChannel <- AtomLog{LogType: ActionLogType, LogBody: logBody}
+func (actionLog *ActionLog) AddExecLog(logBody string) {
+	actionLog.internalAdd(ActionLogType, logBody)
 }
 
-func (actionLog ActionLog) AddSysLog(logBody string) {
-	*actionLog.StepLogChannel <- AtomLog{LogType: SysLogType, LogBody: logBody}
+func (actionLog *ActionLog) AddSysLog(logBody string) {
+	actionLog.internalAdd(SysLogType, logBody)
 }
 
-func (actionLog ActionLog) Write(bytes []byte) (n int, err error) {
-	*actionLog.StepLogChannel <- AtomLog{LogType: ActionLogType, LogBody: string(bytes)}
+func (actionLog *ActionLog) Write(bytes []byte) (n int, err error) {
+	actionLog.internalAdd(ActionLogType, string(bytes))
 	return len(bytes), nil
+}
+
+func (actionLog *ActionLog) internalAdd(logType int, logBody string) {
+	actionLog.orderIdTemp = actionLog.orderIdTemp + 1
+	*actionLog.StepLogChannel <- AtomLog{LogType: logType, LogBody: logBody, OrderId: actionLog.orderIdTemp}
 }

@@ -16,6 +16,7 @@ import (
 type GitSourceConfig struct {
 	GitAddress        string `json:"gitAddress"`
 	AuthType          int    `json:"authType"` //拉取git的身份验证方式,PublicKey or Password
+	Branch            string `json:"branch"`
 	CommitId          string `json:"commitId"` //CommitHashId
 	AuthUsername      string `json:"authUsername"`
 	AuthPassword      string `json:"authPassword"`
@@ -34,10 +35,10 @@ type GitSourceHandler struct {
 	gitSourceConfig *GitSourceConfig
 	repoName        string
 	gitRepoDir      string
-	stepLog         *StepLog
+	stepLog         *JobLog
 }
 
-func NewGitSourceHandler(resourceDir string, repoName string, sourceConfig *json.RawMessage, stepLog *StepLog) (*GitSourceHandler, error) {
+func NewGitSourceHandler(resourceDir string, repoName string, sourceConfig *json.RawMessage, stepLog *JobLog) (*GitSourceHandler, error) {
 	var gitResourceConfig GitSourceConfig
 	err := json.Unmarshal(*sourceConfig, &gitResourceConfig)
 	if err != nil {
@@ -80,7 +81,7 @@ func (gitHandler GitSourceHandler) HandleSource() (*string, error) {
 	}
 	fetchErr := repo.Fetch(&git.FetchOptions{
 		RemoteName: "origin",
-		Progress:   actionLog,
+		Progress:   &actionLog,
 		Auth:       auth,
 	})
 	if fetchErr != nil && !strings.Contains(fetchErr.Error(), "already up-to-date") {
@@ -90,10 +91,20 @@ func (gitHandler GitSourceHandler) HandleSource() (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = worktree.Checkout(&git.CheckoutOptions{
-		Hash:  plumbing.NewHash(gitHandler.gitSourceConfig.CommitId),
-		Force: true,
-	})
+	//
+	var checkoutOptions git.CheckoutOptions
+	if len(gitHandler.gitSourceConfig.CommitId) != 0 {
+		checkoutOptions = git.CheckoutOptions{
+			Hash:  plumbing.NewHash(gitHandler.gitSourceConfig.CommitId),
+			Force: true,
+		}
+	} else {
+		checkoutOptions = git.CheckoutOptions{
+			Branch: plumbing.ReferenceName(gitHandler.gitSourceConfig.Branch),
+			Force:  true,
+		}
+	}
+	err = worktree.Checkout(&checkoutOptions)
 	if err != nil {
 		return nil, err
 	}

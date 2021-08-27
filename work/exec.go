@@ -44,7 +44,7 @@ func (executor *Executor) ExecShell(shellPart string) error {
 	if executor.recordEnv {
 		fullCmd = shellPart + "\n\nenv >> \"" + envAbFilePath + "\""
 	}
-	cmd := exec.Command("bash", "-c", fullCmd)
+	cmd := exec.Command("bash", "-c", "source /etc/profile && "+fullCmd)
 	cmd.Dir = executor.workDir
 	// Add custom env
 	env := cmd.Env

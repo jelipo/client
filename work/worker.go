@@ -16,15 +16,16 @@ type NewWork struct {
 }
 
 const (
-	CommandType = 1
-	DeployType  = 2
+	CommandType       = 1
+	DeployType        = 2
+	DockerCommandType = 3
 )
 
 type WorkerStarter struct {
 	source  []Source
 	worker  Worker
 	workDir *WorkDir
-	stepLog StepLog
+	stepLog JobLog
 }
 
 func NewWorkerStarter(sources []Source, newWork *NewWork) (*WorkerStarter, error) {
@@ -76,7 +77,7 @@ func (starter *WorkerStarter) RunStarter() error {
 	return nil
 }
 
-func (starter *WorkerStarter) StepLog() StepLog {
+func (starter *WorkerStarter) StepLog() JobLog {
 	return starter.stepLog
 }
 
@@ -88,7 +89,7 @@ type Worker interface {
 	Stop() error
 }
 
-func newWorker(newWork *NewWork, workDir *WorkDir, stepLog *StepLog) (Worker, error) {
+func newWorker(newWork *NewWork, workDir *WorkDir, stepLog *JobLog) (Worker, error) {
 	switch newWork.Type {
 	case CommandType:
 		body := newWork.WorkConfig
@@ -100,7 +101,7 @@ func newWorker(newWork *NewWork, workDir *WorkDir, stepLog *StepLog) (Worker, er
 	return nil, errors.New("not support work type")
 }
 
-func handleResources(sources []Source, workDir *WorkDir, stepLog *StepLog) error {
+func handleResources(sources []Source, workDir *WorkDir, stepLog *JobLog) error {
 	if sources != nil && len(sources) != 0 {
 		for _, resource := range sources {
 			//判断是否需要缓存resource

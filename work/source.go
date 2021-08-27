@@ -24,7 +24,7 @@ type Handler interface {
 	HandleSource() (*string, error)
 }
 
-func NewSourceHandler(source *Source, resourcesWorkDor string, stepLog *StepLog) (Handler, error) {
+func NewSourceHandler(source *Source, resourcesWorkDor string, stepLog *JobLog) (Handler, error) {
 	switch source.Type {
 	case GitSourceType:
 		return NewGitSourceHandler(resourcesWorkDor, source.ProjectName, source.SourceConfig, stepLog)
