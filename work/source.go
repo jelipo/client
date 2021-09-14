@@ -1,21 +1,20 @@
 package work
 
 import (
-	"encoding/json"
 	"errors"
 )
 
 type Source struct {
-	IsMainSource bool             `json:"isMainSource"`
-	Type         int              `json:"type"`
-	UseCache     bool             `json:"useCache"` //是否使用缓存
-	ProjectName  string           `json:"projectName"`
-	SourceConfig *json.RawMessage `json:"sourceConfig"`
+	SourceId        string          `json:"sourceId"`
+	SourceType      string          `json:"sourceType"`
+	UseCache        bool            `json:"useCache"`
+	ProjectName     string          `json:"projectName"`
+	GitSourceConfig GitSourceConfig `json:"gitSourceConfig"`
 }
 
 const (
-	GitSourceType    = 1
-	HttpDownloadType = 2
+	OutsideGit = "OUTSIDE_GIT"
+	HttpFile   = "HTTP_FILE"
 )
 
 type Handler interface {
@@ -25,10 +24,10 @@ type Handler interface {
 }
 
 func NewSourceHandler(source *Source, resourcesWorkDor string, stepLog *JobLog) (Handler, error) {
-	switch source.Type {
-	case GitSourceType:
-		return NewGitSourceHandler(resourcesWorkDor, source.ProjectName, source.SourceConfig, stepLog)
-	case HttpDownloadType:
+	switch source.SourceType {
+	case OutsideGit:
+		return NewGitSourceHandler(resourcesWorkDor, source.ProjectName, source.GitSourceConfig, stepLog)
+	case HttpFile:
 		return nil, errors.New("not support HttpDownloadType yet")
 	}
 	return nil, errors.New("not support yet")

@@ -39,7 +39,7 @@ func (manager *PipeManager) aliveServer() {
 	newJobs := alive.NewJobs
 	fmt.Println("Get ", len(newJobs), " jobs")
 	for _, job := range newJobs {
-		err := manager.workerManager.AddNewJob(job.JobRunningId, job.Sources, &job.NewWork)
+		err := manager.workerManager.AddNewJob(job.JobRunningId, job.Sources, &job)
 		if err != nil {
 			// TODO
 			log.Println("add new job error" + err.Error())

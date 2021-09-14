@@ -28,9 +28,10 @@ type WorkerStarter struct {
 	stepLog JobLog
 }
 
-func NewWorkerStarter(sources []Source, newWork *NewWork) (*WorkerStarter, error) {
+func NewWorkerStarter(sources []Source, newJob *NewJob) (*WorkerStarter, error) {
 	clientWorkDir := config.GlobalConfig.Local.ClientWorkDir
-	stepWorkDirPath := clientWorkDir + "/" + newWork.PipeId + "/" + newWork.StepId
+
+	stepWorkDirPath := clientWorkDir + "/" + newJob.PipeRunningId + "/" + newJob.JobRunningId
 	_, err := os.Stat(stepWorkDirPath)
 	if os.IsNotExist(err) {
 		_ = os.MkdirAll(stepWorkDirPath, fs.ModePerm)
@@ -45,13 +46,12 @@ func NewWorkerStarter(sources []Source, newWork *NewWork) (*WorkerStarter, error
 			}
 		}
 	}
-
 	workDir, err := NewWorkDir(stepWorkDirPath, mainSourceName)
 	if err != nil {
 		return nil, err
 	}
 	stepLog := NewStepLog()
-	worker, err := newWorker(newWork, workDir, &stepLog)
+	worker, err := newWorker(newJob, workDir, &stepLog)
 	err = workDir.CleanWorkDir()
 	if err != nil {
 		return nil, err

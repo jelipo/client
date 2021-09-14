@@ -103,14 +103,8 @@ func readBody(response *http.Response) ([]byte, error) {
 	return responseBodyBytes, nil
 }
 
-type NewJob struct {
-	JobRunningId string        `json:"jobRunningId"`
-	Sources      []work.Source `json:"sources"`
-	NewWork      work.NewWork  `json:"newWork"`
-}
-
 type AliveResponse struct {
-	NewJobs []NewJob `json:"newJobs"`
+	NewJobs []work.NewJob `json:"newJobs"`
 }
 
 type AliveRequest struct {

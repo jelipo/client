@@ -1,7 +1,6 @@
 package work
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -38,15 +37,10 @@ type GitSourceHandler struct {
 	stepLog         *JobLog
 }
 
-func NewGitSourceHandler(resourceDir string, repoName string, sourceConfig *json.RawMessage, stepLog *JobLog) (*GitSourceHandler, error) {
-	var gitResourceConfig GitSourceConfig
-	err := json.Unmarshal(*sourceConfig, &gitResourceConfig)
-	if err != nil {
-		return nil, err
-	}
+func NewGitSourceHandler(resourceDir string, repoName string, gitSourceConfig *GitSourceConfig, stepLog *JobLog) (*GitSourceHandler, error) {
 	return &GitSourceHandler{
 		resourceDir:     resourceDir,
-		gitSourceConfig: &gitResourceConfig,
+		gitSourceConfig: gitSourceConfig,
 		repoName:        repoName,
 		gitRepoDir:      resourceDir + "/" + repoName,
 		stepLog:         stepLog,

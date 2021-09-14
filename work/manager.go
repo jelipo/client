@@ -60,7 +60,7 @@ func (manager *Manager) ReadStatus() (ManagerStatus, map[string]WorkerOutStatus)
 	return status, statusMap
 }
 
-func (manager *Manager) AddNewJob(jobRunningId string, sources []Source, newWork *NewWork) error {
+func (manager *Manager) AddNewJob(jobRunningId string, sources []Source, newJob *NewJob) error {
 	manager.statusLock.Lock()
 	defer manager.statusLock.Unlock()
 	// check status
@@ -73,7 +73,7 @@ func (manager *Manager) AddNewJob(jobRunningId string, sources []Source, newWork
 		return errors.New("'" + jobRunningId + "' already exited")
 	}
 	// creat new work
-	starter, err := NewWorkerStarter(sources, newWork)
+	starter, err := NewWorkerStarter(sources, newJob)
 	if err != nil {
 		return err
 	}
