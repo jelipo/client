@@ -30,14 +30,16 @@ func NewRunnerAlive() RunnerAlive {
 
 func (alive *RunnerAlive) alive(
 	runnerStatus *work.ManagerStatus,
-	workersStatus map[string]work.WorkerOutStatus,
-	acceptJobs []string,
+	workersStatus map[string]work.JobOutStatus,
+	acceptRunningJobIds []string,
+	denyRunningJobIds []string,
 ) (*AliveResponse, error) {
 	aliveRequest := AliveRequest{
 		HostStatus:   HostStatus{},
 		RunnerStatus: *runnerStatus,
 		JobsStatus:   changeStatus(workersStatus),
-		AcceptJobs:   acceptJobs,
+		AcceptJobs:   acceptRunningJobIds,
+		DenyJobs:     denyRunningJobIds,
 	}
 	runnerId := config.GlobalConfig.Server.RunnerId
 	runnerToken := config.GlobalConfig.Server.Token
@@ -48,14 +50,18 @@ func (alive *RunnerAlive) alive(
 	return aliveResponse, nil
 }
 
-func changeStatus(workerStatus map[string]work.WorkerOutStatus) []JobsStatus {
-	var jobsStatus = make([]JobsStatus, len(workerStatus))
+func changeStatus(workerStatus map[string]work.JobOutStatus) []JobsStatus {
+	var jobsStatus []JobsStatus
 	for _, workStatus := range workerStatus {
-		jobsStatus = append(jobsStatus, JobsStatus{
+		status := JobsStatus{
 			JobRunningId: workStatus.JobRunningId,
 			AtomLogs:     workStatus.AtomLogs,
-			Done:         workStatus.Done,
-		})
+			Finished:     workStatus.Finished,
+		}
+		if workStatus.Success {
+			status.FinishedStatus = "SUCCESS"
+		}
+		jobsStatus = append(jobsStatus, status)
 	}
 	return jobsStatus
 }
@@ -112,6 +118,7 @@ type AliveRequest struct {
 	RunnerStatus work.ManagerStatus `json:"runnerStatus"`
 	JobsStatus   []JobsStatus       `json:"jobsStatus"`
 	AcceptJobs   []string           `json:"acceptJobs"`
+	DenyJobs     []string           `json:"denyJobs"`
 }
 
 type HostStatus struct {
@@ -119,7 +126,8 @@ type HostStatus struct {
 }
 
 type JobsStatus struct {
-	JobRunningId string         `json:"jobRunningId"`
-	AtomLogs     []work.AtomLog `json:"atomLogs"`
-	Done         bool           `json:"done"`
+	JobRunningId   string         `json:"jobRunningId"`
+	AtomLogs       []work.AtomLog `json:"atomLogs"`
+	Finished       bool           `json:"finished"`
+	FinishedStatus string         `json:"finishedStatus"`
 }

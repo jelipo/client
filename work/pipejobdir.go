@@ -1,19 +1,19 @@
 package work
 
 import (
-	"client/work"
 	"os"
 )
 
 type PipeJobDir struct {
 	RunningPipeDir string
+	RunningJobDir  string
 	WorkDir        string
 	TempWorkDir    string
 	MainSourceId   string
 	SourceIdDirMap map[string]string
 }
 
-func NewPipeJobDir(runnerClientWorkDir string, pipeRunningId string, jobRunningId string, mainSourceId string, sources []work.Source) (*PipeJobDir, error) {
+func NewPipeJobDir(runnerClientWorkDir string, pipeRunningId string, jobRunningId string, mainSourceId string, sources []Source) (*PipeJobDir, error) {
 	runningPipeDir := runnerClientWorkDir + "/" + pipeRunningId
 	runningJobDir := runningPipeDir + "/" + jobRunningId
 	workDir := runningJobDir + "/work"
@@ -33,6 +33,7 @@ func NewPipeJobDir(runnerClientWorkDir string, pipeRunningId string, jobRunningI
 	}
 	return &PipeJobDir{
 		RunningPipeDir: runningPipeDir,
+		RunningJobDir:  runningJobDir,
 		WorkDir:        workDir,
 		TempWorkDir:    tempWorkDir,
 		MainSourceId:   mainSourceId,
@@ -41,15 +42,23 @@ func NewPipeJobDir(runnerClientWorkDir string, pipeRunningId string, jobRunningI
 }
 
 func (workDir PipeJobDir) SourceDir(sourceId string) string {
-	return workDir.SourceDir(sourceId)
+	return workDir.SourceIdDirMap[sourceId]
+}
+
+func (workDir PipeJobDir) MainSourceDir() string {
+	return workDir.SourceDir(workDir.MainSourceId)
 }
 
 func (workDir PipeJobDir) CleanTempDir() error {
 	return cleanDir(workDir.TempWorkDir)
 }
 
-func (workDir PipeJobDir) CleanWorkDir() error {
+func (workDir PipeJobDir) CleanJobWorkDir() error {
 	return cleanDir(workDir.WorkDir)
+}
+
+func (workDir PipeJobDir) CleanRunningJobDir() error {
+	return cleanDir(workDir.RunningJobDir)
 }
 
 func cleanDir(dir string) error {

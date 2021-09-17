@@ -1,41 +1,31 @@
 package work
 
-import (
-	"encoding/json"
-)
-
-type CommandWork struct {
-	Cmds []string `json:"cmds"`
-	Envs []string `json:"envs"`
-}
+import "log"
 
 type CommandWorker struct {
-	cmds     []string
-	envs     []string
-	workDir  *WorkDir
-	stepLog  *JobLog
-	stopChan chan bool
+	cmds       []string
+	envs       []string
+	pipeJobDir *PipeJobDir
+	jobLog     *JobLog
+	stopChan   chan bool
 }
 
-func newCommandWorker(stepLog *JobLog, workBody *json.RawMessage, stepWorkDir *WorkDir) (*CommandWorker, error) {
-	var cmdWork CommandWork
-	err := json.Unmarshal(*workBody, &cmdWork)
-	if err != nil {
-		return nil, err
-	}
+func newCommandWorker(stepLog *JobLog, cmdJob *CmdJobDto, pipeJobDir *PipeJobDir) (*CommandWorker, error) {
 	cmdWorker := CommandWorker{
-		cmds:    cmdWork.Cmds,
-		envs:    cmdWork.Envs,
-		workDir: stepWorkDir,
-		stepLog: stepLog,
+		cmds:       cmdJob.Cmds,
+		envs:       cmdJob.Envs,
+		pipeJobDir: pipeJobDir,
+		jobLog:     stepLog,
 	}
 	return &cmdWorker, nil
 }
 
 func (cmdWorker *CommandWorker) Run() error {
+	log.Println("Running a command type job")
 	for _, cmd := range cmdWorker.cmds {
-		actionLog := cmdWorker.stepLog.NewAction("Execute command: " + cmd)
-		exec := NewExec(cmdWorker.workDir.MainSourceDir, &actionLog, cmdWorker.envs, 10000, true, &cmdWorker.stopChan)
+		actionLog := cmdWorker.jobLog.NewAction("Execute command: " + cmd)
+		// TODO MainSourceDir is nil
+		exec := NewExec(cmdWorker.pipeJobDir.MainSourceDir(), &actionLog, cmdWorker.envs, 10000, true, &cmdWorker.stopChan)
 		err := exec.ExecShell(cmd)
 		if err != nil {
 			return err

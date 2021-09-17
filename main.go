@@ -15,7 +15,7 @@ func main() {
 	if err != nil {
 		return
 	}
-	pipeManager := NewPipeManager()
+	pipeManager := NewRunnerClient()
 	pipeManager.run()
 }
 

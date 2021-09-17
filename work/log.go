@@ -1,12 +1,19 @@
 package work
 
+import (
+	"log"
+	"time"
+)
+
 // AtomLog 执行日志
 type AtomLog struct {
 	LogType int `json:"logType"`
 	// 日志实体
 	LogBody string `json:"logBody"`
 
-	OrderId int `json:"orderId"`
+	OrderId int `json:"jobOrderId"`
+
+	TimeStamp int64 `json:"timestamp"`
 }
 
 const (
@@ -17,19 +24,41 @@ const (
 
 type JobLog struct {
 	logChannel chan AtomLog
+	orderGen   OrderIdGen
 }
 
-func NewStepLog() JobLog {
-	return JobLog{logChannel: make(chan AtomLog, 1024)}
+type OrderIdGen struct {
+	orderIdTemp int
 }
 
-func (stepLog *JobLog) NewAction(actionName string) ActionLog {
-	stepLog.logChannel <- AtomLog{LogType: ActionNameType, LogBody: actionName + "\n"}
-	return ActionLog{StepLogChannel: &stepLog.logChannel, orderIdTemp: 0}
+func (orderIdGen *OrderIdGen) GetAndAdd() int {
+	orderIdGen.orderIdTemp = orderIdGen.orderIdTemp + 1
+	return orderIdGen.orderIdTemp
 }
 
-func (stepLog *JobLog) GetLogs(maxSize int) []AtomLog {
-	chanLen := len(stepLog.logChannel)
+func NewJobLog() JobLog {
+	jobLog := JobLog{
+		logChannel: make(chan AtomLog, 1024),
+		orderGen:   OrderIdGen{orderIdTemp: 0},
+	}
+	return jobLog
+}
+
+func (jobLog *JobLog) NewAction(actionName string) ActionLog {
+	jobLog.logChannel <- AtomLog{
+		LogType:   ActionNameType,
+		LogBody:   actionName + "\n",
+		TimeStamp: time.Now().UnixMilli(),
+		OrderId:   jobLog.orderGen.GetAndAdd(),
+	}
+	return ActionLog{
+		StepLogChannel: &jobLog.logChannel,
+		orderIdGen:     &jobLog.orderGen,
+	}
+}
+
+func (jobLog *JobLog) GetLogs(maxSize int) []AtomLog {
+	chanLen := len(jobLog.logChannel)
 	if chanLen == 0 {
 		return make([]AtomLog, 0)
 	}
@@ -41,7 +70,7 @@ func (stepLog *JobLog) GetLogs(maxSize int) []AtomLog {
 	}
 	size := len(buffer)
 	for i := 0; i < size; i++ {
-		log := <-stepLog.logChannel
+		log := <-jobLog.logChannel
 		buffer[i] = log
 	}
 	return buffer
@@ -49,7 +78,7 @@ func (stepLog *JobLog) GetLogs(maxSize int) []AtomLog {
 
 type ActionLog struct {
 	StepLogChannel *chan AtomLog
-	orderIdTemp    int
+	orderIdGen     *OrderIdGen
 }
 
 func (actionLog *ActionLog) AddExecLog(logBody string) {
@@ -66,6 +95,11 @@ func (actionLog *ActionLog) Write(bytes []byte) (n int, err error) {
 }
 
 func (actionLog *ActionLog) internalAdd(logType int, logBody string) {
-	actionLog.orderIdTemp = actionLog.orderIdTemp + 1
-	*actionLog.StepLogChannel <- AtomLog{LogType: logType, LogBody: logBody, OrderId: actionLog.orderIdTemp}
+	log.Print(logBody)
+	*actionLog.StepLogChannel <- AtomLog{
+		LogType:   logType,
+		LogBody:   logBody,
+		OrderId:   actionLog.orderIdGen.GetAndAdd(),
+		TimeStamp: time.Now().UnixMilli(),
+	}
 }

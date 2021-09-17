@@ -1,6 +1,6 @@
 {
   "server": {
-    "address": "http://192.168.6.101:8080/workercenter/api/v1/runner/live",
+    "address": "http://192.168.6.102:8080/cicdengine/api/v1/runner/live",
     "runnerId": "1234567890",
     "token": "test-token",
     "maxWorkerNum": 2

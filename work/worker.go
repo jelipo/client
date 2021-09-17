@@ -4,8 +4,7 @@ import (
 	"client/config"
 	"encoding/json"
 	"errors"
-	"io/fs"
-	"os"
+	"log"
 )
 
 type NewWork struct {
@@ -16,60 +15,48 @@ type NewWork struct {
 }
 
 const (
-	CommandType       = 1
-	DeployType        = 2
-	DockerCommandType = 3
+	CommandType       = "COMMAND"
+	DeployType        = "DEPLOY"
+	DockerCommandType = "DOCKER_COMMAND"
 )
 
-type WorkerStarter struct {
-	source  []Source
-	worker  Worker
-	workDir *WorkDir
-	stepLog JobLog
+type JobStarter struct {
+	source       []Source
+	worker       JobWorker
+	pipeJobDir   *PipeJobDir
+	jobLog       *JobLog
+	jobRunningId string
 }
 
-func NewWorkerStarter(sources []Source, newJob *NewJob) (*WorkerStarter, error) {
+func NewJobStarter(sources []Source, newJob *NewJob) (*JobStarter, error) {
 	clientWorkDir := config.GlobalConfig.Local.ClientWorkDir
 
-	stepWorkDirPath := clientWorkDir + "/" + newJob.PipeRunningId + "/" + newJob.JobRunningId
-	_, err := os.Stat(stepWorkDirPath)
-	if os.IsNotExist(err) {
-		_ = os.MkdirAll(stepWorkDirPath, fs.ModePerm)
-	}
-	var mainSourceName string
-	if sources == nil || len(sources) == 0 {
-		mainSourceName = ""
-	} else {
-		for _, source := range sources {
-			if source.IsMainSource {
-				mainSourceName = source.ProjectName
-			}
-		}
-	}
-	workDir, err := NewWorkDir(stepWorkDirPath, mainSourceName)
+	pipeJobDir, err := NewPipeJobDir(clientWorkDir, newJob.PipeRunningId, newJob.JobRunningId, newJob.MainSourceId, newJob.Sources)
 	if err != nil {
 		return nil, err
 	}
-	stepLog := NewStepLog()
-	worker, err := newWorker(newJob, workDir, &stepLog)
-	err = workDir.CleanWorkDir()
+	stepLog := NewJobLog()
+	worker, err := newWorker(newJob, pipeJobDir, &stepLog)
+	err = pipeJobDir.CleanJobWorkDir()
 	if err != nil {
 		return nil, err
 	}
-	return &WorkerStarter{
-		source:  sources,
-		worker:  worker,
-		workDir: workDir,
-		stepLog: stepLog,
+	return &JobStarter{
+		source:       sources,
+		worker:       worker,
+		pipeJobDir:   pipeJobDir,
+		jobLog:       &stepLog,
+		jobRunningId: newJob.JobRunningId,
 	}, nil
 }
 
-func (starter *WorkerStarter) RunStarter() error {
+func (starter *JobStarter) RunStarter() error {
 	// Handle the resources
-	err := handleResources(starter.source, starter.workDir, &starter.stepLog)
+	err := handleResources(starter.source, starter.pipeJobDir, starter.jobLog)
 	if err != nil {
 		return err
 	}
+	log.Println("Running job")
 	err = starter.worker.Run()
 	if err != nil {
 		return err
@@ -77,11 +64,11 @@ func (starter *WorkerStarter) RunStarter() error {
 	return nil
 }
 
-func (starter *WorkerStarter) StepLog() JobLog {
-	return starter.stepLog
+func (starter *JobStarter) JobLog() *JobLog {
+	return starter.jobLog
 }
 
-type Worker interface {
+type JobWorker interface {
 	// Run the worker
 	Run() error
 
@@ -89,11 +76,10 @@ type Worker interface {
 	Stop() error
 }
 
-func newWorker(newWork *NewWork, workDir *WorkDir, stepLog *JobLog) (Worker, error) {
-	switch newWork.Type {
+func newWorker(newJob *NewJob, pipeJobDir *PipeJobDir, jobLog *JobLog) (JobWorker, error) {
+	switch newJob.JobType {
 	case CommandType:
-		body := newWork.WorkConfig
-		return newCommandWorker(stepLog, body, workDir)
+		return newCommandWorker(jobLog, &newJob.CmdJobDto, pipeJobDir)
 	case DeployType:
 		// TODO Not support yet
 		return nil, errors.New("DeployType not support yet")
@@ -101,33 +87,20 @@ func newWorker(newWork *NewWork, workDir *WorkDir, stepLog *JobLog) (Worker, err
 	return nil, errors.New("not support work type")
 }
 
-func handleResources(sources []Source, workDir *WorkDir, stepLog *JobLog) error {
-	if sources != nil && len(sources) != 0 {
-		for _, resource := range sources {
+func handleResources(sources []Source, pipeJobDir *PipeJobDir, jobLog *JobLog) error {
+	if len(sources) != 0 {
+		for _, source := range sources {
 			//判断是否需要缓存resource
-			var resourcesWorkDir string
-			if resource.UseCache {
-				resourcesWorkDir = workDir.ResourcesWorkDir
-			} else {
-				resourcesWorkDir = workDir.TempWorkDir
-			}
-			handler, err := NewSourceHandler(&resource, resourcesWorkDir, stepLog)
+			var resourcesWorkDir = pipeJobDir.SourceDir(source.SourceId)
+			handler, err := NewSourceHandler(&source, resourcesWorkDir, jobLog)
 			if err != nil {
 				return err
 			}
-			resourceProjectPath, err := handler.HandleSource()
-			if err != nil {
-				return err
-			}
-			err = os.Rename(*resourceProjectPath, workDir.ProjectMainWorkDir(resource.ProjectName))
+			err = handler.StartHandleSource()
 			if err != nil {
 				return err
 			}
 		}
-	}
-	err := workDir.CleanTempDir()
-	if err != nil {
-		return err
 	}
 	return nil
 }
