@@ -1,6 +1,6 @@
 package util
 
-import "log"
+import "github.com/sirupsen/logrus"
 
 type AsyncRunFlag struct {
 	channel   chan int
@@ -28,7 +28,7 @@ func (flag *AsyncRunFlag) run(fn func() error) {
 	err := fn()
 	if err != nil {
 		flag.haveError = true
-		log.Println("RunningJob happened a error:" + err.Error())
+		logrus.Info("RunningJob happened a error:" + err.Error())
 		return
 	} else {
 		flag.haveError = false

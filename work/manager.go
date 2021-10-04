@@ -3,7 +3,7 @@ package work
 import (
 	"client/util"
 	"errors"
-	"log"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -109,7 +109,7 @@ func asyncRunWorker(starter *JobStarter) util.AsyncRunFlag {
 		if err != nil {
 			return err
 		}
-		log.Println("Job:" + starter.jobRunningId + " finished.")
+		logrus.Info("Job:" + starter.jobRunningId + " finished.")
 		return nil
 	})
 }
@@ -117,17 +117,17 @@ func asyncRunWorker(starter *JobStarter) util.AsyncRunFlag {
 func clean(starter *JobStarter) {
 	err := starter.pipeJobDir.CleanRunningJobDir()
 	if err != nil {
-		log.Println("Clean job dir failed jobRunningId: " + starter.jobRunningId + " err:" + err.Error())
+		logrus.Info("Clean job dir failed jobRunningId: " + starter.jobRunningId + " err:" + err.Error())
 		return
 	} else {
-		log.Println("Clean job dir success jobRunningId:" + starter.jobRunningId)
+		logrus.Info("Clean job dir success jobRunningId:" + starter.jobRunningId)
 	}
 }
 
 func run(starter *JobStarter) error {
 	err := starter.RunStarter()
 	if err != nil {
-		log.Println("Run job:" + starter.jobRunningId + " failed. " + err.Error())
+		logrus.Info("Run job:" + starter.jobRunningId + " failed. " + err.Error())
 		return err
 	}
 	return nil

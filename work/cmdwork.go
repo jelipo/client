@@ -1,6 +1,6 @@
 package work
 
-import "log"
+import "github.com/sirupsen/logrus"
 
 type CommandWorker struct {
 	cmds       []string
@@ -21,7 +21,7 @@ func newCommandWorker(stepLog *JobLog, cmdJob *CmdJobDto, pipeJobDir *PipeJobDir
 }
 
 func (cmdWorker *CommandWorker) Run() error {
-	log.Println("Running a command type job")
+	logrus.Info("Running a command type job")
 	for _, cmd := range cmdWorker.cmds {
 		actionLog := cmdWorker.jobLog.NewAction("Execute command: " + cmd)
 		// TODO MainSourceDir is nil

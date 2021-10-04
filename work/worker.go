@@ -4,7 +4,7 @@ import (
 	"client/config"
 	"encoding/json"
 	"errors"
-	"log"
+	"github.com/sirupsen/logrus"
 )
 
 type NewWork struct {
@@ -56,7 +56,7 @@ func (starter *JobStarter) RunStarter() error {
 	if err != nil {
 		return err
 	}
-	log.Println("Running job")
+	logrus.Info("Running job")
 	err = starter.worker.Run()
 	if err != nil {
 		return err

@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	Init()
 	logrus.Info("Hello World")
 	err := config.IninConfig("/home/cao/go/client/config.json")
 	if err != nil {
@@ -24,6 +25,7 @@ func printLog(stepLog *work.JobLog) {
 		time.Sleep(time.Duration(500) * time.Millisecond)
 		logs := stepLog.GetLogs(100)
 		if logs == nil {
+
 			time.Sleep(time.Duration(100) * time.Millisecond)
 			continue
 		}
