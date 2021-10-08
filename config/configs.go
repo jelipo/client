@@ -47,7 +47,7 @@ func (reader *ConfigReader) readNewConfig() (*Config, error) {
 	return &config, nil
 }
 
-func IninConfig(path string) error {
+func InitConfig(path string) error {
 	reader := newConfigReader(path)
 	config, err := reader.readNewConfig()
 	if err != nil {

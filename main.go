@@ -5,19 +5,44 @@ import (
 	"client/work"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"os"
 	"strings"
 	"time"
 )
 
 func main() {
-	Init()
-	logrus.Info("Hello World")
-	err := config.IninConfig("/home/cao/go/client/config.json")
+	initValue, err := InitContext()
+	if err != nil {
+		logrus.Error(err.Error())
+		os.Exit(1)
+	}
+	logrus.Info("DPS Runner")
+	// Find config file,
+	exited, err := ConfigExist(initValue.ConfigPath)
+	if err != nil {
+		logrus.Error(err.Error())
+		os.Exit(1)
+	}
+	// if not exited try to register, and generate config file
+	if !exited {
+		err := RegisterServer(initValue)
+		if err != nil {
+			logrus.Error(err.Error())
+			os.Exit(1)
+		}
+	}
+	// Read config
+	err = config.InitConfig(initValue.ConfigPath)
 	if err != nil {
 		return
 	}
+	// Listening
 	pipeManager := NewRunnerClient()
 	pipeManager.run()
+}
+
+func register() error {
+	return nil
 }
 
 func printLog(stepLog *work.JobLog) {
