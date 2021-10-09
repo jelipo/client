@@ -1,6 +1,7 @@
 package main
 
 import (
+	"client/api"
 	"client/config"
 	"client/work"
 	"github.com/sirupsen/logrus"
@@ -13,9 +14,14 @@ type RunnerClient struct {
 }
 
 func NewRunnerClient() RunnerClient {
+	httpApi := api.NewRunnerHttpApi(
+		config.GlobalConfig.Server.Address,
+		config.GlobalConfig.Server.RunnerId,
+		config.GlobalConfig.Server.Token,
+	)
 	return RunnerClient{
-		jobManager:  work.NewWorkerManager(config.GlobalConfig.Server.MaxWorkerNum),
-		runnerAlive: NewRunnerAlive(),
+		jobManager:  work.NewWorkerManager(config.GlobalConfig.Server.MaxJobNum),
+		runnerAlive: NewRunnerAlive(&httpApi),
 	}
 }
 

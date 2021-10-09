@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -17,9 +18,11 @@ type RunnerHttpApi struct {
 	httpclient  http.Client
 }
 
-func NewRunnerHttpApi(address string) RunnerHttpApi {
+func NewRunnerHttpApi(address string, runnerId string, runnerToken string) RunnerHttpApi {
 	return RunnerHttpApi{
-		address: address,
+		runnerId:    runnerId,
+		runnerToken: runnerToken,
+		address:     address,
 		httpclient: http.Client{
 			Timeout: 5 * time.Second,
 		},
@@ -44,7 +47,7 @@ func (api *RunnerHttpApi) doHttp(httpMethod string, url string, requestBody inte
 	}
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
 		body, _ := readBody(httpResponse)
-		errorMsg := fmt.Sprintf("request alive server error,httpcode:%d ,body:%s", httpResponse.StatusCode, body)
+		errorMsg := fmt.Sprintf("request dps server error,httpcode:%d ,body:%s", httpResponse.StatusCode, body)
 		return errors.New(errorMsg)
 	}
 	body, err := readBody(httpResponse)
@@ -53,6 +56,7 @@ func (api *RunnerHttpApi) doHttp(httpMethod string, url string, requestBody inte
 	}
 	err = json.Unmarshal(body, responseInterface)
 	if err != nil {
+		logrus.Error("get response failed")
 		return err
 	}
 	return nil

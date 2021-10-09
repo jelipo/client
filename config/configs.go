@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 var GlobalConfig *Config
@@ -15,10 +16,10 @@ type Config struct {
 }
 
 type Server struct {
-	RunnerId     string `json:"runnerId"`
-	Address      string `json:"address"`
-	Token        string `json:"token"`
-	MaxWorkerNum int    `json:"maxWorkerNum"`
+	RunnerId  string `json:"runnerId"`
+	Address   string `json:"address"`
+	Token     string `json:"token"`
+	MaxJobNum int    `json:"maxWorkerNum"`
 }
 
 type Local struct {
@@ -54,5 +55,27 @@ func InitConfig(path string) error {
 		return err
 	}
 	GlobalConfig = config
+	return nil
+}
+
+func WriteConfigFile(config *Config, path string) error {
+	configJsonBytes, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+	dir := filepath.Dir(path)
+	err = os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.Write(configJsonBytes)
+	if err != nil {
+		return err
+	}
 	return nil
 }
