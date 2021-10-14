@@ -1,6 +1,7 @@
 package work
 
 import (
+	"client/api"
 	"client/config"
 	"encoding/json"
 	"errors"
@@ -21,14 +22,14 @@ const (
 )
 
 type JobStarter struct {
-	source       []Source
+	source       []api.Source
 	worker       JobWorker
 	pipeJobDir   *PipeJobDir
 	jobLog       *JobLog
 	jobRunningId string
 }
 
-func NewJobStarter(sources []Source, newJob *NewJob) (*JobStarter, error) {
+func NewJobStarter(sources []api.Source, newJob *api.NewJob) (*JobStarter, error) {
 	clientWorkDir := config.GlobalConfig.Local.ClientWorkDir
 
 	pipeJobDir, err := NewPipeJobDir(clientWorkDir, newJob.PipeRunningId, newJob.JobRunningId, newJob.MainSourceId, newJob.Sources)
@@ -76,7 +77,7 @@ type JobWorker interface {
 	Stop() error
 }
 
-func newWorker(newJob *NewJob, pipeJobDir *PipeJobDir, jobLog *JobLog) (JobWorker, error) {
+func newWorker(newJob *api.NewJob, pipeJobDir *PipeJobDir, jobLog *JobLog) (JobWorker, error) {
 	switch newJob.JobType {
 	case CommandType:
 		return newCommandWorker(jobLog, &newJob.CmdJobDto, pipeJobDir)
@@ -87,7 +88,7 @@ func newWorker(newJob *NewJob, pipeJobDir *PipeJobDir, jobLog *JobLog) (JobWorke
 	return nil, errors.New("not support work type")
 }
 
-func handleResources(sources []Source, pipeJobDir *PipeJobDir, jobLog *JobLog) error {
+func handleResources(sources []api.Source, pipeJobDir *PipeJobDir, jobLog *JobLog) error {
 	if len(sources) != 0 {
 		for _, source := range sources {
 			//判断是否需要缓存resource

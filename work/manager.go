@@ -1,6 +1,7 @@
 package work
 
 import (
+	"client/api"
 	"client/util"
 	"errors"
 	"github.com/sirupsen/logrus"
@@ -16,7 +17,7 @@ type JobManager struct {
 }
 
 type ManagerStatus struct {
-	runningNum int
+	RunningNum int
 }
 
 type WorkerRunningStatus struct {
@@ -26,14 +27,14 @@ type WorkerRunningStatus struct {
 
 type JobOutStatus struct {
 	JobRunningId string
-	AtomLogs     []AtomLog
+	AtomLogs     []api.AtomLog
 	Finished     bool
 	Success      bool
 }
 
 func NewWorkerManager(maxNum int) JobManager {
 	return JobManager{
-		status:              ManagerStatus{runningNum: 0},
+		status:              ManagerStatus{RunningNum: 0},
 		statusLock:          sync.RWMutex{},
 		runningMap:          make(map[string]WorkerRunningStatus, 128),
 		acceptRunningJobIds: []string{},
@@ -61,7 +62,7 @@ func (manager *JobManager) ReadStatus() (ManagerStatus, map[string]JobOutStatus)
 	for _, outStatus := range statusMap {
 		if outStatus.Finished {
 			delete(manager.runningMap, outStatus.JobRunningId)
-			manager.status.runningNum = manager.status.runningNum - 1
+			manager.status.RunningNum = manager.status.RunningNum - 1
 		}
 	}
 	return status, statusMap
@@ -80,7 +81,7 @@ func (manager *JobManager) GetAndCleanAcceptDenyRunningJobIds() ([]string, []str
 	return accept, deny
 }
 
-func (manager *JobManager) AddNewJob(jobRunningId string, sources []Source, newJob *NewJob) error {
+func (manager *JobManager) AddNewJob(jobRunningId string, sources []api.Source, newJob *api.NewJob) error {
 	manager.statusLock.Lock()
 	defer manager.statusLock.Unlock()
 	// check status
@@ -98,7 +99,7 @@ func (manager *JobManager) AddNewJob(jobRunningId string, sources []Source, newJ
 		flag:    flag,
 		starter: starter,
 	}
-	manager.status.runningNum += 1
+	manager.status.RunningNum += 1
 	return nil
 }
 

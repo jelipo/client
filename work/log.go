@@ -1,20 +1,10 @@
 package work
 
 import (
+	"client/api"
 	"log"
 	"time"
 )
-
-// AtomLog 执行日志
-type AtomLog struct {
-	LogType int `json:"logType"`
-	// 日志实体
-	LogBody string `json:"logBody"`
-
-	OrderId int `json:"jobOrderId"`
-
-	TimeStamp int64 `json:"timestamp"`
-}
 
 const (
 	ActionLogType  = 1
@@ -23,7 +13,7 @@ const (
 )
 
 type JobLog struct {
-	logChannel chan AtomLog
+	logChannel chan api.AtomLog
 	orderGen   OrderIdGen
 }
 
@@ -38,14 +28,14 @@ func (orderIdGen *OrderIdGen) GetAndAdd() int {
 
 func NewJobLog() JobLog {
 	jobLog := JobLog{
-		logChannel: make(chan AtomLog, 1024),
+		logChannel: make(chan api.AtomLog, 1024),
 		orderGen:   OrderIdGen{orderIdTemp: 0},
 	}
 	return jobLog
 }
 
 func (jobLog *JobLog) NewAction(actionName string) ActionLog {
-	jobLog.logChannel <- AtomLog{
+	jobLog.logChannel <- api.AtomLog{
 		LogType:   ActionNameType,
 		LogBody:   actionName + "\n",
 		TimeStamp: time.Now().UnixMilli(),
@@ -57,16 +47,16 @@ func (jobLog *JobLog) NewAction(actionName string) ActionLog {
 	}
 }
 
-func (jobLog *JobLog) GetLogs(maxSize int) []AtomLog {
+func (jobLog *JobLog) GetLogs(maxSize int) []api.AtomLog {
 	chanLen := len(jobLog.logChannel)
 	if chanLen == 0 {
-		return make([]AtomLog, 0)
+		return make([]api.AtomLog, 0)
 	}
-	var buffer []AtomLog
+	var buffer []api.AtomLog
 	if chanLen < maxSize {
-		buffer = make([]AtomLog, chanLen)
+		buffer = make([]api.AtomLog, chanLen)
 	} else {
-		buffer = make([]AtomLog, maxSize)
+		buffer = make([]api.AtomLog, maxSize)
 	}
 	size := len(buffer)
 	for i := 0; i < size; i++ {
@@ -77,7 +67,7 @@ func (jobLog *JobLog) GetLogs(maxSize int) []AtomLog {
 }
 
 type ActionLog struct {
-	StepLogChannel *chan AtomLog
+	StepLogChannel *chan api.AtomLog
 	orderIdGen     *OrderIdGen
 }
 
@@ -96,7 +86,7 @@ func (actionLog *ActionLog) Write(bytes []byte) (n int, err error) {
 
 func (actionLog *ActionLog) internalAdd(logType int, logBody string) {
 	log.Print(logBody)
-	*actionLog.StepLogChannel <- AtomLog{
+	*actionLog.StepLogChannel <- api.AtomLog{
 		LogType:   logType,
 		LogBody:   logBody,
 		OrderId:   actionLog.orderIdGen.GetAndAdd(),

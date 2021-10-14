@@ -29,8 +29,8 @@ func (alive *RunnerAlive) alive(
 ) (*api.AliveResponse, error) {
 	aliveRequest := api.AliveRequest{
 		HostStatus:   api.HostStatus{},
-		RunnerStatus: *runnerStatus,
-		JobsStatus:   changeStatus(workersStatus),
+		RunnerStatus: api.RunnerStatus{RunningNum: runnerStatus.RunningNum},
+		JobsStatus:   changeJobStatusToRequest(workersStatus),
 		AcceptJobs:   acceptRunningJobIds,
 		DenyJobs:     denyRunningJobIds,
 	}
@@ -41,7 +41,7 @@ func (alive *RunnerAlive) alive(
 	return aliveResponse, nil
 }
 
-func changeStatus(workerStatus map[string]work.JobOutStatus) []api.JobsStatus {
+func changeJobStatusToRequest(workerStatus map[string]work.JobOutStatus) []api.JobsStatus {
 	var jobsStatus []api.JobsStatus
 	for _, workStatus := range workerStatus {
 		status := api.JobsStatus{

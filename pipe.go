@@ -33,20 +33,15 @@ func (runnerManager *RunnerClient) run() {
 		var sleepMills = 2000
 		time.Sleep(time.Duration(sleepMills) * time.Millisecond)
 	}
-
-	//logrus.Info("Start get new jobs from server")
-	//runnerManager.requestServer()
-	//var sleepMills = 2000
-	//time.Sleep(time.Duration(sleepMills) * time.Second)
-
 }
 
+// 向服务端请求
 func (runnerManager *RunnerClient) requestServer() {
 	manageStatus, workersStatus := runnerManager.jobManager.ReadStatus()
 	acceptJobs, denyJobs := runnerManager.jobManager.GetAndCleanAcceptDenyRunningJobIds()
 	aliveResponse, err := runnerManager.runnerAlive.alive(&manageStatus, workersStatus, acceptJobs, denyJobs)
 	if err != nil {
-		logrus.Info("alive error:" + err.Error())
+		logrus.Warning("alive error:" + err.Error())
 		return
 	}
 	newJobs := aliveResponse.NewJobs
@@ -55,7 +50,7 @@ func (runnerManager *RunnerClient) requestServer() {
 }
 
 // 处理新的Jobs
-func (runnerManager *RunnerClient) handleAliveNewJobs(newJobs []work.NewJob) {
+func (runnerManager *RunnerClient) handleAliveNewJobs(newJobs []api.NewJob) {
 	var acceptRunningJobIds []string
 	var denyRunningJobIds []string
 	for _, job := range newJobs {

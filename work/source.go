@@ -1,6 +1,7 @@
 package work
 
 import (
+	"client/api"
 	"errors"
 )
 
@@ -15,7 +16,7 @@ type Handler interface {
 	StartHandleSource() error
 }
 
-func NewSourceHandler(source *Source, resourcesWorkDir string, stepLog *JobLog) (Handler, error) {
+func NewSourceHandler(source *api.Source, resourcesWorkDir string, stepLog *JobLog) (Handler, error) {
 	switch source.SourceType {
 	case OutsideGit:
 		return NewGitSourceHandler(resourcesWorkDir, source.ProjectName, &source.GitSourceConfig, stepLog)

@@ -1,6 +1,7 @@
 package work
 
 import (
+	"client/api"
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
@@ -20,14 +21,14 @@ const (
 )
 
 type GitSourceHandler struct {
-	gitSourceConfig *GitSourceConfig
+	gitSourceConfig *api.GitSourceConfig
 	repoName        string
 	gitRepoDir      string
 	jobLog          *JobLog
 	sourceName      string
 }
 
-func NewGitSourceHandler(sourceDir string, sourceName string, gitSourceConfig *GitSourceConfig, jobLog *JobLog) (*GitSourceHandler, error) {
+func NewGitSourceHandler(sourceDir string, sourceName string, gitSourceConfig *api.GitSourceConfig, jobLog *JobLog) (*GitSourceHandler, error) {
 	return &GitSourceHandler{
 		gitSourceConfig: gitSourceConfig,
 		gitRepoDir:      sourceDir,
@@ -70,7 +71,7 @@ func gitInitRepo(gitRepoDir string) (*git.Repository, error) {
 	return repo, nil
 }
 
-func fetchGitFile(repo *git.Repository, gitSourceConfig *GitSourceConfig, actionLog *ActionLog) error {
+func fetchGitFile(repo *git.Repository, gitSourceConfig *api.GitSourceConfig, actionLog *ActionLog) error {
 	remotes, _ := repo.Remotes()
 	remote, _ := repo.Remote("origin")
 	if len(remotes) == 0 || remote == nil {
@@ -115,7 +116,7 @@ func fetchGitFile(repo *git.Repository, gitSourceConfig *GitSourceConfig, action
 	return nil
 }
 
-func gitPlainClone(path string, gitSourceConfig *GitSourceConfig, actionLog *ActionLog) error {
+func gitPlainClone(path string, gitSourceConfig *api.GitSourceConfig, actionLog *ActionLog) error {
 	auth, err := gitAuth(gitSourceConfig)
 	if err != nil {
 		return err
@@ -135,7 +136,7 @@ func gitPlainClone(path string, gitSourceConfig *GitSourceConfig, actionLog *Act
 	return nil
 }
 
-func gitAuth(config *GitSourceConfig) (transport.AuthMethod, error) {
+func gitAuth(config *api.GitSourceConfig) (transport.AuthMethod, error) {
 	switch config.AuthType {
 	case GitAuthPassword:
 		auth := http.BasicAuth{Username: config.AuthUsername, Password: config.AuthPassword}

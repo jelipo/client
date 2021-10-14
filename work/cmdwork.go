@@ -1,6 +1,9 @@
 package work
 
-import "github.com/sirupsen/logrus"
+import (
+	"client/api"
+	"github.com/sirupsen/logrus"
+)
 
 type CommandWorker struct {
 	cmds       []string
@@ -10,7 +13,7 @@ type CommandWorker struct {
 	stopChan   chan bool
 }
 
-func newCommandWorker(stepLog *JobLog, cmdJob *CmdJobDto, pipeJobDir *PipeJobDir) (*CommandWorker, error) {
+func newCommandWorker(stepLog *JobLog, cmdJob *api.CmdJobDto, pipeJobDir *PipeJobDir) (*CommandWorker, error) {
 	cmdWorker := CommandWorker{
 		cmds:       cmdJob.Cmds,
 		envs:       cmdJob.Envs,

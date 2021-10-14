@@ -1,6 +1,7 @@
 package work
 
 import (
+	"client/api"
 	"os"
 )
 
@@ -13,7 +14,7 @@ type PipeJobDir struct {
 	SourceIdDirMap map[string]string
 }
 
-func NewPipeJobDir(runnerClientWorkDir string, pipeRunningId string, jobRunningId string, mainSourceId string, sources []Source) (*PipeJobDir, error) {
+func NewPipeJobDir(runnerClientWorkDir string, pipeRunningId string, jobRunningId string, mainSourceId string, sources []api.Source) (*PipeJobDir, error) {
 	runningPipeDir := runnerClientWorkDir + "/" + pipeRunningId
 	runningJobDir := runningPipeDir + "/" + jobRunningId
 	workDir := runningJobDir + "/work"

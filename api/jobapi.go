@@ -1,4 +1,8 @@
-package work
+package api
+
+type AliveResponse struct {
+	NewJobs []NewJob `json:"newJobs"`
+}
 
 type NewJob struct {
 	//NewWork       work.NewWork  `json:"newWork"`
@@ -10,7 +14,14 @@ type NewJob struct {
 	PipeRunningId string    `json:"pipeRunningId"`
 	MainSourceId  string    `json:"mainSourceId"`
 	JobType       string    `json:"jobType"`
+	PipeEnvs      []PipeEnv `json:"pipeEnvs"`
 	CmdJobDto     CmdJobDto `json:"cmdJob"` // Exited when jobType is "COMMAND"
+}
+
+type PipeEnv struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+	Type  string `json:"type"`
 }
 
 type Source struct {
@@ -35,4 +46,44 @@ type GitSourceConfig struct {
 type CmdJobDto struct {
 	Cmds []string `json:"cmds"`
 	Envs []string `json:"envs"`
+}
+
+type AliveRequest struct {
+	HostStatus   HostStatus   `json:"hostStatus"`
+	RunnerStatus RunnerStatus `json:"runnerStatus"`
+	JobsStatus   []JobsStatus `json:"jobsStatus"`
+	AcceptJobs   []string     `json:"acceptJobs"`
+	DenyJobs     []string     `json:"denyJobs"`
+}
+
+type RunnerStatus struct {
+	RunningNum int `json:"runningNum"`
+}
+
+type HostStatus struct {
+	// TODO CPU/Memory/Disk info
+}
+
+type JobsStatus struct {
+	JobRunningId   string    `json:"jobRunningId"`
+	AtomLogs       []AtomLog `json:"atomLogs"`
+	Finished       bool      `json:"finished"`
+	FinishedStatus string    `json:"finishedStatus"`
+}
+
+// AtomLog 执行日志
+type AtomLog struct {
+	LogType   int    `json:"logType"`
+	LogBody   string `json:"logBody"`
+	OrderId   int    `json:"jobOrderId"`
+	TimeStamp int64  `json:"timestamp"`
+}
+
+func (api *RunnerHttpApi) AliveToServer(aliveRequest *AliveRequest) (*AliveResponse, error) {
+	var response AliveResponse
+	err := api.doHttp("POST", api.address+"/live", aliveRequest, &response)
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
