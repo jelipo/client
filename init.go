@@ -20,7 +20,7 @@ func InitContext() (*InitValue, error) {
 	}
 	if len(value.ConfigPath) == 0 {
 		currentPath := util.GetCurrentPath()
-		value.ConfigPath = currentPath + "/dps_runner/config.json"
+		value.ConfigPath = currentPath + "/dsa_runner/config.json"
 	}
 	return value, nil
 }

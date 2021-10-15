@@ -15,12 +15,6 @@ type NewWork struct {
 	WorkConfig *json.RawMessage `json:"workConfig"`
 }
 
-const (
-	CommandType       = "COMMAND"
-	DeployType        = "DEPLOY"
-	DockerCommandType = "DOCKER_COMMAND"
-)
-
 type JobStarter struct {
 	source       []api.Source
 	worker       JobWorker
@@ -79,9 +73,9 @@ type JobWorker interface {
 
 func newWorker(newJob *api.NewJob, pipeJobDir *PipeJobDir, jobLog *JobLog) (JobWorker, error) {
 	switch newJob.JobType {
-	case CommandType:
+	case api.CommandType:
 		return newCommandWorker(jobLog, &newJob.CmdJobDto, pipeJobDir)
-	case DeployType:
+	case api.DeployType:
 		// TODO Not support yet
 		return nil, errors.New("DeployType not support yet")
 	}

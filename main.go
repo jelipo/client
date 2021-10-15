@@ -12,7 +12,7 @@ func main() {
 		logrus.Error(err.Error())
 		os.Exit(1)
 	}
-	logrus.Info("DPS Runner")
+	logrus.Info("DSA Runner")
 	// Find config file,
 	exited, err := ConfigExist(initValue.ConfigPath)
 	if err != nil {

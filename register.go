@@ -34,7 +34,7 @@ func toServer(server *config.Server, initValue *InitValue) error {
 	var host string
 	var err error
 	if len(initValue.ServerHost) == 0 {
-		host, err = scanln("please enter dps server host.(such as 'https://dps.daocloud.com')")
+		host, err = scanln("please enter dsa server host.(such as 'https://dsa.daocloud.com')")
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func toServer(server *config.Server, initValue *InitValue) error {
 	var serverPath string
 	if len(initValue.ServerPath) == 0 {
 		serverPath = "/cicdengine/api/v1/runner"
-		logrus.Info("use default dps server path: " + serverPath)
+		logrus.Info("use default dsa server path: " + serverPath)
 	} else {
 		serverPath = initValue.ServerPath
 	}
@@ -52,7 +52,7 @@ func toServer(server *config.Server, initValue *InitValue) error {
 	tempHttpApi := api.NewRunnerHttpApi(address, "", "")
 	var oneTimeToken = initValue.OneTimeToken
 	if len(oneTimeToken) == 0 {
-		oneTimeToken, err = scanln("please enter dps server one time token")
+		oneTimeToken, err = scanln("please enter dsa server one time token")
 		if err != nil {
 			return err
 		}
@@ -86,7 +86,7 @@ func toLocal(local *config.Local, initValue *InitValue) error {
 		return err
 	}
 	if len(workDir) == 0 {
-		workDir = currUser.HomeDir + "/dps_runner/work"
+		workDir = currUser.HomeDir + "/dsa_runner/work"
 	}
 	local.ClientWorkDir = workDir
 	return nil

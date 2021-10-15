@@ -13,13 +13,6 @@ import (
 	"strings"
 )
 
-const (
-	NoAuth               = "NO_AUTH"
-	GitAuthPassword      = "PASSWORD"
-	GitAuthPublicKeyStr  = "PUBLIC_KEY_STR"
-	GitAuthPublicKeyFile = "PUBLIC_KEY_FILE"
-)
-
 type GitSourceHandler struct {
 	gitSourceConfig *api.GitSourceConfig
 	repoName        string
@@ -138,22 +131,22 @@ func gitPlainClone(path string, gitSourceConfig *api.GitSourceConfig, actionLog 
 
 func gitAuth(config *api.GitSourceConfig) (transport.AuthMethod, error) {
 	switch config.AuthType {
-	case GitAuthPassword:
+	case api.GitAuthPassword:
 		auth := http.BasicAuth{Username: config.AuthUsername, Password: config.AuthPassword}
 		return &auth, nil
-	case GitAuthPublicKeyFile:
+	case api.GitAuthPublicKeyFile:
 		publicKey, err := ssh.NewPublicKeysFromFile("git", config.AuthPublicKeyPath, config.AuthPassword)
 		if err != nil {
 			return nil, err
 		}
 		return publicKey, err
-	case GitAuthPublicKeyStr:
+	case api.GitAuthPublicKeyStr:
 		publicKey, err := ssh.NewPublicKeys("git", []byte(config.AuthPublicKeyStr), config.AuthPassword)
 		if err != nil {
 			return nil, err
 		}
 		return publicKey, err
-	case NoAuth:
+	case api.NoAuth:
 		auth := http.BasicAuth{Username: config.AuthUsername, Password: config.AuthPassword}
 		return &auth, nil
 	}

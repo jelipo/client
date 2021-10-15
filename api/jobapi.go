@@ -13,10 +13,18 @@ type NewJob struct {
 	JobId         string    `json:"jobId"`
 	PipeRunningId string    `json:"pipeRunningId"`
 	MainSourceId  string    `json:"mainSourceId"`
-	JobType       string    `json:"jobType"`
+	JobType       JobType   `json:"jobType"`
 	PipeEnvs      []PipeEnv `json:"pipeEnvs"`
 	CmdJobDto     CmdJobDto `json:"cmdJob"` // Exited when jobType is "COMMAND"
 }
+
+type JobType string
+
+const (
+	CommandType       = JobType("COMMAND")
+	DeployType        = JobType("DEPLOY")
+	DockerCommandType = JobType("DOCKER_COMMAND")
+)
 
 type PipeEnv struct {
 	Name  string `json:"name"`
@@ -26,22 +34,38 @@ type PipeEnv struct {
 
 type Source struct {
 	SourceId        string          `json:"sourceId"`
-	SourceType      string          `json:"sourceType"`
+	SourceType      SourceType      `json:"sourceType"`
 	UseCache        bool            `json:"useCache"`
 	ProjectName     string          `json:"projectName"`
 	GitSourceConfig GitSourceConfig `json:"gitSourceConfig"`
 }
 
+type SourceType string
+
+const (
+	OutsideGit = SourceType("OUTSIDE_GIT")
+	HttpFile   = SourceType("HTTP_FILE")
+)
+
 type GitSourceConfig struct {
-	GitAddress        string `json:"gitAddress"`
-	AuthType          string `json:"authType"` //拉取git的身份验证方式,PublicKey or Password
-	Branch            string `json:"branch"`
-	CommitId          string `json:"commitId"` //CommitHashId
-	AuthUsername      string `json:"authUsername"`
-	AuthPassword      string `json:"authPassword"`
-	AuthPublicKeyStr  string `json:"authPublicKeyStr"`
-	AuthPublicKeyPath string `json:"authPublicKeyPath"`
+	GitAddress        string      `json:"gitAddress"`
+	AuthType          GitAuthType `json:"authType"` //拉取git的身份验证方式,PublicKey or Password
+	Branch            string      `json:"branch"`
+	CommitId          string      `json:"commitId"` //CommitHashId
+	AuthUsername      string      `json:"authUsername"`
+	AuthPassword      string      `json:"authPassword"`
+	AuthPublicKeyStr  string      `json:"authPublicKeyStr"`
+	AuthPublicKeyPath string      `json:"authPublicKeyPath"`
 }
+
+type GitAuthType string
+
+const (
+	NoAuth               = GitAuthType("NO_AUTH")
+	GitAuthPassword      = GitAuthType("PASSWORD")
+	GitAuthPublicKeyStr  = GitAuthType("PUBLIC_KEY_STR")
+	GitAuthPublicKeyFile = GitAuthType("PUBLIC_KEY_FILE")
+)
 
 type CmdJobDto struct {
 	Cmds []string `json:"cmds"`

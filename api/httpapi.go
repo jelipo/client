@@ -47,7 +47,7 @@ func (api *RunnerHttpApi) doHttp(httpMethod string, url string, requestBody inte
 	}
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
 		body, _ := readBody(httpResponse)
-		errorMsg := fmt.Sprintf("request dps server error,httpcode:%d ,body:%s", httpResponse.StatusCode, body)
+		errorMsg := fmt.Sprintf("request dsa server error,httpcode:%d ,body:%s", httpResponse.StatusCode, body)
 		return errors.New(errorMsg)
 	}
 	body, err := readBody(httpResponse)
