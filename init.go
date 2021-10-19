@@ -14,7 +14,7 @@ import nested "github.com/antonfisher/nested-logrus-formatter"
 func InitContext() (*InitValue, error) {
 	initLogContext()
 	printBanner()
-	value, err := readEnv()
+	value, err := readHostEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func ConfigExist(configPath string) (bool, error) {
 	return true, nil
 }
 
-func readEnv() (*InitValue, error) {
+func readHostEnv() (*InitValue, error) {
 	initValue := InitValue{}
 	if err := env.Parse(&initValue); err != nil {
 		return nil, errors.New("read env failed")

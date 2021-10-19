@@ -26,7 +26,7 @@ func newCommandWorker(stepLog *JobLog, cmdJob *api.CmdJobDto, pipeJobDir *PipeJo
 	return &cmdWorker, nil
 }
 
-func (cmdWorker *CommandWorker) Run() error {
+func (cmdWorker *CommandWorker) Run(result *SourceResult) error {
 	logrus.Info("Running a command type job")
 	for _, cmd := range cmdWorker.cmds {
 		actionLog := cmdWorker.jobLog.NewAction("Execute command: " + cmd)
@@ -35,10 +35,7 @@ func (cmdWorker *CommandWorker) Run() error {
 		strings := changeEnvs(cmdWorker.pipeEnvs)
 		envs = append(envs, strings...)
 		exec := NewExec(cmdWorker.pipeJobDir.MainSourceDir(), &actionLog, cmdWorker.cmdEnvs, 5*60*1000, true, &cmdWorker.stopChan)
-		err := exec.ExecShell(cmd)
-		if err != nil {
-			return err
-		}
+		return exec.ExecShell(cmd)
 	}
 	return nil
 }

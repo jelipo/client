@@ -21,7 +21,7 @@ func main() {
 	}
 	// if not exited try to register, and generate config file
 	if !exited {
-		logrus.Info("can not found config file,runner need to regist")
+		logrus.Info("Can not found config file,runner need to register")
 		err := RegisterToServer(initValue)
 		if err != nil {
 			logrus.Error(err.Error())

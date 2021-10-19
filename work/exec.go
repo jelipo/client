@@ -42,7 +42,7 @@ func (executor *Executor) ExecShell(shellPart string) error {
 	//cmd := exec.Command("bash", bashFilePath, shellPart, envFileName)
 	var fullCmd = shellPart
 	if executor.recordEnv {
-		fullCmd = shellPart + "\n\nenv >> \"" + envAbFilePath + "\""
+		fullCmd = shellPart + " env >> \"" + envAbFilePath + "\""
 	}
 	cmd := exec.Command("bash", "-c", "source /etc/profile && "+fullCmd)
 	cmd.Dir = executor.workDir
@@ -82,8 +82,7 @@ func (executor *Executor) startAndWait(cmd *exec.Cmd) error {
 	goPackage.AddAndRun(func() {
 		listenLog(&stdErrPipe, executor.actionLog)
 	})
-	startErr := cmd.Start()
-	if startErr != nil {
+	if startErr := cmd.Start(); startErr != nil {
 		return startErr
 	}
 	for true {
@@ -91,8 +90,7 @@ func (executor *Executor) startAndWait(cmd *exec.Cmd) error {
 			break
 		} else {
 			if len(*executor.stopChan) != 0 {
-				err := cmd.Process.Kill()
-				if err != nil {
+				if err := cmd.Process.Kill(); err != nil {
 					return err
 				}
 			} else {

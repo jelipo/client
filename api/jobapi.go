@@ -89,11 +89,18 @@ type HostStatus struct {
 }
 
 type JobsStatus struct {
-	JobRunningId   string    `json:"jobRunningId"`
-	AtomLogs       []AtomLog `json:"atomLogs"`
-	Finished       bool      `json:"finished"`
-	FinishedStatus string    `json:"finishedStatus"`
+	JobRunningId   string            `json:"jobRunningId"`
+	AtomLogs       []AtomLog         `json:"atomLogs"`
+	Finished       bool              `json:"finished"`
+	FinishedStatus JobFinishedStatus `json:"finishedStatus"`
 }
+
+type JobFinishedStatus string
+
+const (
+	SUCCESS = JobFinishedStatus("SUCCESS")
+	FAILURE = JobFinishedStatus("FAILURE")
+)
 
 // AtomLog 执行日志
 type AtomLog struct {

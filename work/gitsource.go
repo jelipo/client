@@ -19,39 +19,43 @@ type GitSourceHandler struct {
 	gitRepoDir      string
 	jobLog          *JobLog
 	sourceName      string
+	isMainSource    bool
 }
 
-func NewGitSourceHandler(sourceDir string, sourceName string, gitSourceConfig *api.GitSourceConfig, jobLog *JobLog) (*GitSourceHandler, error) {
+func NewGitSourceHandler(sourceDir string, sourceName string, gitSourceConfig *api.GitSourceConfig, jobLog *JobLog, isMainSource bool) (*GitSourceHandler, error) {
 	return &GitSourceHandler{
 		gitSourceConfig: gitSourceConfig,
 		gitRepoDir:      sourceDir,
 		jobLog:          jobLog,
 		sourceName:      sourceName,
+		isMainSource:    isMainSource,
 	}, nil
 }
 
-func (gitHandler *GitSourceHandler) StartHandleSource() error {
-	actionLog := gitHandler.jobLog.NewAction("Get the git source file. sourceName:" + gitHandler.sourceName)
+func (gitHandler *GitSourceHandler) StartHandleSource() (*SourceResult, error) {
+	actionLog := gitHandler.jobLog.NewAction("Get the git sources file. sourceName:" + gitHandler.sourceName)
 	_ = os.MkdirAll(gitHandler.gitRepoDir, os.ModePerm)
+	var repo *git.Repository
+	var err error
 	if len(gitHandler.gitSourceConfig.CommitId) != 0 {
-		repo, err := gitInitRepo(gitHandler.gitRepoDir)
+		repo, err = gitInitRepo(gitHandler.gitRepoDir)
 		if err != nil {
-			actionLog.AddExecLog("Git source checkout failed.")
-			return err
+			actionLog.AddExecLog("Git sources checkout failed.")
+			return nil, err
 		}
 		err = fetchGitFile(repo, gitHandler.gitSourceConfig, &actionLog)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
-		err := gitPlainClone(gitHandler.gitRepoDir, gitHandler.gitSourceConfig, &actionLog)
+		repo, err = gitPlainClone(gitHandler.gitRepoDir, gitHandler.gitSourceConfig, &actionLog)
 		if err != nil {
-			actionLog.AddExecLog("Git source plain clone failed.")
-			return err
+			actionLog.AddExecLog("Git sources plain clone failed.")
+			return nil, err
 		}
 	}
-	actionLog.AddExecLog("Git source download success.")
-	return nil
+	actionLog.AddExecLog("Git sources download success.")
+	return buildMainSourceGitResult(repo, gitHandler.isMainSource)
 }
 
 func gitInitRepo(gitRepoDir string) (*git.Repository, error) {
@@ -109,12 +113,12 @@ func fetchGitFile(repo *git.Repository, gitSourceConfig *api.GitSourceConfig, ac
 	return nil
 }
 
-func gitPlainClone(path string, gitSourceConfig *api.GitSourceConfig, actionLog *ActionLog) error {
+func gitPlainClone(path string, gitSourceConfig *api.GitSourceConfig, actionLog *ActionLog) (*git.Repository, error) {
 	auth, err := gitAuth(gitSourceConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	_, err = git.PlainClone(path, false, &git.CloneOptions{
+	repo, err := git.PlainClone(path, false, &git.CloneOptions{
 		URL:           gitSourceConfig.GitAddress,
 		Auth:          auth,
 		ReferenceName: plumbing.NewBranchReferenceName(gitSourceConfig.Branch),
@@ -124,9 +128,36 @@ func gitPlainClone(path string, gitSourceConfig *api.GitSourceConfig, actionLog 
 		Progress:      actionLog,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return repo, nil
+}
+
+func buildMainSourceGitResult(repo *git.Repository, isMainSource bool) (*SourceResult, error) {
+	if !isMainSource {
+		return &SourceResult{
+			SourceEnvs: make([]SourceEnv, 0),
+		}, nil
+	}
+	head, err := repo.Head()
+	if err != nil {
+		return nil, err
+	}
+	gitCommitHash := head.Hash().String()
+	referenceName := head.Name().String()
+	var envs []SourceEnv
+	envs = append(envs, SourceEnv{
+		name:  "MAIN_GIT_COMMIT_HASH",
+		value: gitCommitHash,
+	})
+	envs = append(envs, SourceEnv{
+		name:  "MAIN_GIT_REFERENCE_NAME",
+		value: referenceName,
+	})
+	result := SourceResult{
+		SourceEnvs: envs,
+	}
+	return &result, nil
 }
 
 func gitAuth(config *api.GitSourceConfig) (transport.AuthMethod, error) {

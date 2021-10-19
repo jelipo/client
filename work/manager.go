@@ -21,7 +21,7 @@ type ManagerStatus struct {
 }
 
 type WorkerRunningStatus struct {
-	flag    util.AsyncRunFlag
+	flag    *util.AsyncRunFlag
 	starter *JobStarter
 }
 
@@ -103,7 +103,7 @@ func (manager *JobManager) AddNewJob(jobRunningId string, sources []api.Source, 
 	return nil
 }
 
-func asyncRunWorker(starter *JobStarter) util.AsyncRunFlag {
+func asyncRunWorker(starter *JobStarter) *util.AsyncRunFlag {
 	return util.NewAsyncRunFlag(func() error {
 		defer clean(starter)
 		err := run(starter)

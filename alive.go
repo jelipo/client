@@ -49,9 +49,14 @@ func changeJobStatusToRequest(workerStatus map[string]work.JobOutStatus) []api.J
 			AtomLogs:     workStatus.AtomLogs,
 			Finished:     workStatus.Finished,
 		}
-		if workStatus.Success {
-			status.FinishedStatus = "SUCCESS"
+		if workStatus.Finished {
+			if workStatus.Success {
+				status.FinishedStatus = api.SUCCESS
+			} else {
+				status.FinishedStatus = api.FAILURE
+			}
 		}
+
 		jobsStatus = append(jobsStatus, status)
 	}
 	return jobsStatus

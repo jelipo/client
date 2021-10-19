@@ -16,11 +16,12 @@ type NewWork struct {
 }
 
 type JobStarter struct {
-	source       []api.Source
+	sources      []api.Source
 	worker       JobWorker
 	pipeJobDir   *PipeJobDir
 	jobLog       *JobLog
 	jobRunningId string
+	mainSourceId string
 }
 
 func NewJobStarter(sources []api.Source, newJob *api.NewJob) (*JobStarter, error) {
@@ -37,26 +38,23 @@ func NewJobStarter(sources []api.Source, newJob *api.NewJob) (*JobStarter, error
 		return nil, err
 	}
 	return &JobStarter{
-		source:       sources,
+		sources:      sources,
 		worker:       worker,
 		pipeJobDir:   pipeJobDir,
 		jobLog:       &stepLog,
 		jobRunningId: newJob.JobRunningId,
+		mainSourceId: newJob.MainSourceId,
 	}, nil
 }
 
 func (starter *JobStarter) RunStarter() error {
 	// Handle the resources
-	err := handleResources(starter.source, starter.pipeJobDir, starter.jobLog)
+	sourceResult, err := handleResources(starter.sources, starter.pipeJobDir, starter.jobLog, starter.mainSourceId)
 	if err != nil {
 		return err
 	}
-	logrus.Info("Running job")
-	err = starter.worker.Run()
-	if err != nil {
-		return err
-	}
-	return nil
+	logrus.Info("Running job,jobRunningId:" + starter.jobRunningId)
+	return starter.worker.Run(sourceResult)
 }
 
 func (starter *JobStarter) JobLog() *JobLog {
@@ -65,7 +63,7 @@ func (starter *JobStarter) JobLog() *JobLog {
 
 type JobWorker interface {
 	// Run the worker
-	Run() error
+	Run(result *SourceResult) error
 
 	// Stop the worker
 	Stop() error
@@ -82,20 +80,18 @@ func newWorker(newJob *api.NewJob, pipeJobDir *PipeJobDir, jobLog *JobLog) (JobW
 	return nil, errors.New("not support work type")
 }
 
-func handleResources(sources []api.Source, pipeJobDir *PipeJobDir, jobLog *JobLog) error {
+func handleResources(sources []api.Source, pipeJobDir *PipeJobDir, jobLog *JobLog, mainSourceId string) (*SourceResult, error) {
 	if len(sources) != 0 {
 		for _, source := range sources {
 			//判断是否需要缓存resource
 			var resourcesWorkDir = pipeJobDir.SourceDir(source.SourceId)
-			handler, err := NewSourceHandler(&source, resourcesWorkDir, jobLog)
+			isMainSource := source.SourceId == mainSourceId
+			handler, err := NewSourceHandler(&source, resourcesWorkDir, jobLog, isMainSource)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			err = handler.StartHandleSource()
-			if err != nil {
-				return err
-			}
+			return handler.StartHandleSource()
 		}
 	}
-	return nil
+	return nil, nil
 }

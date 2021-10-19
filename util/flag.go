@@ -1,37 +1,45 @@
 package util
 
-import "github.com/sirupsen/logrus"
+import (
+	"github.com/sirupsen/logrus"
+	"sync"
+)
 
 type AsyncRunFlag struct {
-	channel   chan int
-	haveError bool
+	rwMutex     sync.RWMutex
+	doneChannel bool
+	errChannel  bool
 }
 
-func NewAsyncRunFlag(fn func() error) AsyncRunFlag {
+func NewAsyncRunFlag(fn func() error) *AsyncRunFlag {
 	flag := AsyncRunFlag{
-		channel:   make(chan int, 1),
-		haveError: false,
+		rwMutex:     sync.RWMutex{},
+		doneChannel: false,
+		errChannel:  false,
 	}
 	go flag.run(fn)
-	return flag
+	return &flag
 }
 
 func (flag *AsyncRunFlag) IsDone() bool {
-	return len(flag.channel) > 0
+	flag.rwMutex.RLock()
+	defer flag.rwMutex.RUnlock()
+	return flag.doneChannel
 }
 
 func (flag *AsyncRunFlag) HaveError() bool {
-	return flag.haveError
+	flag.rwMutex.RLock()
+	defer flag.rwMutex.RUnlock()
+	return flag.errChannel
 }
 
 func (flag *AsyncRunFlag) run(fn func() error) {
 	err := fn()
+	flag.rwMutex.Lock()
+	defer flag.rwMutex.Unlock()
 	if err != nil {
-		flag.haveError = true
+		flag.errChannel = true
 		logrus.Info("RunningJob happened a error:" + err.Error())
-		return
-	} else {
-		flag.haveError = false
 	}
-	flag.channel <- 1
+	flag.doneChannel = true
 }
